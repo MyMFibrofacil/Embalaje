@@ -1,11 +1,14 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { OBJLoader } from './vendor/OBJLoader.js';
+import { packing } from './packing.js';
+let packView;
 
 const canvas=document.querySelector('#viewer');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.shadowMap.enabled=true; renderer.outputColorSpace=THREE.SRGBColorSpace;
 const scene=new THREE.Scene();
+packing(scene).then(p=>{packView=p;});
 const camera=new THREE.PerspectiveCamera(34,1,.1,1200); camera.position.set(145,105,165);
 const controls=new OrbitControls(camera,canvas); controls.enableDamping=true; controls.target.set(0,0,0); controls.minDistance=55; controls.maxDistance=390;
 scene.add(new THREE.HemisphereLight(0xfaf7ef,0x64717a,2.1));
@@ -79,6 +82,8 @@ function applyState(){
   if(!pieces.length)return;
   modelRoot.rotation.x=THREE.MathUtils.lerp(modelRoot.rotation.x,(mode==='assembled'||mode==='exploded')?Math.PI/2:0,.18);
   const packing=mode==='current'||mode==='optimized';packBase.visible=packing&&progress>=.18;
+  modelRoot.visible=!packing;
+  if(packView)packView.update(packing,progress,mode==='current'?0:7);
   const c=assembledCenter();
   pieces.forEach((p,i)=>{
     let pos,rot=new THREE.Euler(),scale=1,visible=true;
@@ -93,7 +98,7 @@ function applyState(){
     }
     p.mesh.visible=!packing;p.proxy.visible=packing;p.holder.visible=visible;p.holder.position.lerp(pos,.18);p.holder.rotation.x=THREE.MathUtils.lerp(p.holder.rotation.x,rot.x,.18);p.holder.rotation.y=THREE.MathUtils.lerp(p.holder.rotation.y,rot.y,.18);p.holder.rotation.z=THREE.MathUtils.lerp(p.holder.rotation.z,rot.z,.18);p.holder.scale.setScalar(scale);
   });
-  if(mode==='current'||mode==='optimized'){const step=Math.max(0,Math.min(4,Math.ceil(progress*5)-1));updateLayer(step)}
+  if(packing){document.querySelector('#layerName').textContent=`Capa ${Math.max(1,Math.ceil(progress*7))} de 7`;document.querySelector('#layerNote').textContent='Fondos independientes · troquel y 4 trabas incluidos';}
 }
 const copy={assembled:['MODELO ARMADO','Casa completa','Modelo original de Fusion, a escala real.'],exploded:['DESPIECE','21 grupos del modelo','Separación progresiva de cada componente real.'],current:['SECUENCIA ACTUAL','Embalaje fotografiado','Apilado superpuesto con piezas chicas alojadas en huecos.'],optimized:['PROPUESTA DE EMBALAJE','Capas protegidas','Orden sugerido para reducir juego y proteger caras visibles.']};
 function setMode(next,instant=false){mode=next;document.querySelectorAll('.mode').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));const t=copy[mode];document.querySelector('#eyebrow').textContent=t[0];document.querySelector('#viewHeading').textContent=t[1];document.querySelector('#viewCopy').textContent=t[2];document.querySelector('#layerCard').hidden=!(mode==='current'||mode==='optimized');grid.visible=mode!=='assembled';if(mode==='assembled'||mode==='exploded'){camera.position.set(145,105,165);controls.target.set(0,0,0)}else{camera.position.set(105,145,150);controls.target.set(0,0,0)}if(instant)pieces.forEach(p=>p.holder.position.copy(p.assembled.clone().sub(assembledCenter())));applyState()}
@@ -104,5 +109,15 @@ document.querySelector('#progress').addEventListener('input',e=>{progress=+e.tar
 document.querySelectorAll('.layer-list li').forEach(el=>el.addEventListener('click',()=>{setMode('optimized');const s=+el.dataset.step;progress=(s+1)/5;document.querySelector('#progress').value=Math.round(progress*100);document.querySelector('#progressLabel').textContent=Math.round(progress*100)+'%';updateLayer(s);applyState()}));
 document.querySelector('#resetView').addEventListener('click',()=>setMode(mode));
 document.querySelector('#playSequence').addEventListener('click',()=>{if(animation){cancelAnimationFrame(animation);animation=null;return}if(mode!=='current'&&mode!=='optimized')setMode('optimized');progress=0;const start=performance.now();const tick=now=>{progress=Math.min(1,(now-start)/6000);const v=Math.round(progress*100);document.querySelector('#progress').value=v;document.querySelector('#progressLabel').textContent=v+'%';applyState();if(progress<1)animation=requestAnimationFrame(tick);else animation=null};animation=requestAnimationFrame(tick)});
+copy.current=['BULTO COMPACTO','Propuesta apilada','Contornos DXF · separadores de 1 mm entre capas.'];
+copy.optimized=['CAPAS SEPARADAS','Orden de embalaje','Separación vertical ampliada para inspeccionar las siete capas.'];
+document.querySelector('[data-mode="current"] span:last-child').innerHTML='<b>Bulto compacto</b><small>Propuesta apilada</small>';
+document.querySelector('[data-mode="optimized"] span:last-child').innerHTML='<b>Capas separadas</b><small>Contornos del DXF</small>';
+document.querySelector('.metric-grid article:last-child').innerHTML='<span>Huella de las piezas</span><strong>58,9 × 69,6 cm</strong><small>Sin caja ni protección exterior</small>';
+document.querySelector('.saving').innerHTML='<p>Espesor de escalones: 3 mm confirmado. Resto de espesores y cantidad final de trabas: validar con producción. No se declara ahorro porcentual.</p>';
+document.querySelector('.layer-list').previousElementSibling.innerHTML='<span>Capas propuestas</span><span>7</span>';
+document.querySelector('#layerList').innerHTML=['Fondo bajo','Fondo medio','Fondo superior','Tres pisos, lado a lado','Dos laterales, lado a lado','Dos techos, lado a lado','Troquel, largueros y cuatro trabas'].map((n,i)=>`<li data-layer="${i}"><i>${i+1}</i><div><b>${n}</b></div></li>`).join('');
+document.querySelectorAll('[data-layer]').forEach(el=>el.addEventListener('click',()=>{setMode('optimized');progress=(+el.dataset.layer+1)/7;document.querySelector('#progress').value=progress*100;document.querySelector('#progressLabel').textContent=`${+el.dataset.layer+1}/7 capas`;}));
+document.querySelector('.callout').innerHTML='<b>Escalones en un único troquel</b><p>155,2 × 110 × 3 mm. Las cuatro trabas se muestran con sus contornos del DXF. Los dos largueros se representan con el contorno izquierdo; confirmar el derecho antes de producir.</p>';
 function resize(){const w=canvas.clientWidth,h=canvas.clientHeight;if(canvas.width!==w*renderer.getPixelRatio()||canvas.height!==h*renderer.getPixelRatio()){renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}}
 function loop(){resize();applyState();controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)}loop();
