@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="Visualizador 3D y propuesta de embalaje para Casa 60 Desarmada" />
+  <title>Casa 60 · Embalaje 3D</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="importmap">
+    {"imports":{"three":"./vendor/three.module.js"}}
+  </script>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="mark" aria-hidden="true">C60</span>
+        <div><h1>Casa 60</h1><p>Estudio de embalaje · modelo de producción</p></div>
+      </div>
+      <div class="top-actions">
+        <span class="status"><i></i><span id="loadStatus">Cargando modelo real…</span></span>
+        <button class="ghost" id="resetView">Recentrar vista</button>
+      </div>
+    </header>
+
+    <section class="workspace">
+      <aside class="left-panel panel">
+        <div class="section-label">Vista</div>
+        <nav class="mode-tabs" aria-label="Modos de visualización">
+          <button class="mode active" data-mode="assembled"><span class="num">01</span><span><b>Armada</b><small>Producto terminado</small></span></button>
+          <button class="mode" data-mode="exploded"><span class="num">02</span><span><b>Despiece</b><small>21 grupos reales</small></span></button>
+          <button class="mode" data-mode="current"><span class="num">03</span><span><b>Embalaje actual</b><small>Secuencia de las fotos</small></span></button>
+          <button class="mode recommended" data-mode="optimized"><span class="num">04</span><span><b>Propuesta</b><small>Capas protegidas</small></span></button>
+        </nav>
+
+        <div class="divider"></div>
+        <div class="section-label row"><span>Progreso</span><output id="progressLabel">100%</output></div>
+        <input id="progress" type="range" min="0" max="100" value="100" aria-label="Progreso de armado o embalaje" />
+
+        <div class="viewer-help">
+          <span><i class="mouse"></i> Arrastrar: rotar</span>
+          <span><i class="wheel"></i> Rueda: zoom</span>
+        </div>
+      </aside>
+
+      <section class="viewer-wrap" aria-label="Visualizador tridimensional">
+        <canvas id="viewer"></canvas>
+        <div class="view-title"><span id="eyebrow">MODELO ARMADO</span><h2 id="viewHeading">Casa completa</h2><p id="viewCopy">Modelo original de Fusion, a escala real.</p></div>
+        <div class="axis-cue"><span class="axis y"></span><span class="axis x"></span><b>3D</b></div>
+        <div class="layer-card" id="layerCard" hidden>
+          <span>CAPA ACTIVA</span><strong id="layerName">1 · Protección</strong><small id="layerNote">Base rígida y cara limpia hacia afuera</small>
+        </div>
+        <button class="play" id="playSequence" aria-label="Reproducir secuencia"><span>▶</span> Reproducir secuencia</button>
+      </section>
+
+      <aside class="right-panel panel">
+        <div class="section-label row"><span>Diagnóstico</span><span class="pill">PRELIMINAR</span></div>
+        <div class="metric-grid">
+          <article><span>Producto armado</span><strong>70,4 × 24,4 × 94,4</strong><small>cm · envolvente del OBJ</small></article>
+          <article><span>Bulto propuesto</span><strong>60 × 94 × ~8,1</strong><small>cm · validar en planta</small></article>
+        </div>
+
+        <div class="saving">
+          <div class="saving-ring"><strong>−18%</strong><span>altura</span></div>
+          <div><b>Menos aire y movimiento</b><p>La propuesta agrupa placas por formato y encierra piezas chicas entre caras planas.</p></div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="section-label row"><span>Capas propuestas</span><span>5</span></div>
+        <ol class="layer-list" id="layerList">
+          <li data-step="0"><i>1</i><div><b>Tapa exterior</b><small>Placa lisa + cantoneras</small></div></li>
+          <li data-step="1"><i>2</i><div><b>Fondos impresos</b><small>3 paños alineados</small></div></li>
+          <li data-step="2"><i>3</i><div><b>Pisos</b><small>3 placas + separador</small></div></li>
+          <li data-step="3"><i>4</i><div><b>Laterales</b><small>Cara mecanizada hacia adentro</small></div></li>
+          <li data-step="4"><i>5</i><div><b>Techos y escalera</b><small>Piezas chicas embolsadas</small></div></li>
+        </ol>
+
+        <div class="callout"><b>Cambio clave</b><p>No dejar herrajes o piezas pequeñas sueltas en las ventanas. Usar una bolsa plana fijada al separador central.</p></div>
+      </aside>
+    </section>
+  </main>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
