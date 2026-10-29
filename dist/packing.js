@@ -31,7 +31,7 @@ export async function packing(scene){
   'Fondo superior':{layer:2,x:0,z:0,rot:-Math.PI/2},
   'Larguero escalera 1':{layer:2,x:-3.2,z:17.1,rot:.77},
   'Larguero escalera 2':{layer:2,x:-3.2,z:-17.1,rot:-.77},
-  'Troquel completo de escalones · 3 mm':{layer:2,x:-11,z:22.5},
+  'Troquel completo de escalones · 3 mm':{layer:2,x:-11,z:22.5,rot:Math.PI/2},
   'Lateral izquierdo':{layer:3,x:-11,z:0},
   'Lateral derecho':{layer:3,x:11,z:0},
   'Traba 1':{layer:3,x:8.25,z:11.4,rot:.12,lift:.05},
