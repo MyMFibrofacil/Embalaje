@@ -29,9 +29,9 @@ export async function packing(scene){
   'Fondo bajo':{layer:1,x:0,z:0,rot:-Math.PI/2},
   'Fondo medio':{layer:1,x:0,z:0,rot:-Math.PI/2,lift:.3},
   'Fondo superior':{layer:2,x:0,z:0,rot:-Math.PI/2},
-  'Larguero escalera 1':{layer:2,x:0,z:14,rot:.77,lift:.3},
-  'Larguero escalera 2':{layer:2,x:0,z:-14,rot:-.77,lift:.3},
-  'Troquel completo de escalones · 3 mm':{layer:2,x:-11,z:22.5,lift:.3},
+  'Larguero escalera 1':{layer:2,x:-3.2,z:17.1,rot:.77},
+  'Larguero escalera 2':{layer:2,x:-3.2,z:-17.1,rot:-.77},
+  'Troquel completo de escalones · 3 mm':{layer:2,x:-11,z:22.5},
   'Lateral izquierdo':{layer:3,x:-11,z:0},
   'Lateral derecho':{layer:3,x:11,z:0},
   'Traba 1':{layer:3,x:8.25,z:11.4,rot:.12,lift:.05},
@@ -49,7 +49,7 @@ export async function packing(scene){
   if(p.name==='Fondo de protección 40 × 70')return {layer:0,x:0,z:0,hidden:true};
   return plan==='b'&&planB[p.name]?{layer:p.layer,...planB[p.name]}:{layer:p.layer,x:p.x,z:p.z};
  }
- function layerHeights(plan){if(plan==='c')return [.3,.6,.6,.9,.9,.9,.9];return plan==='b'?[.3,.3,.3,.9,1.8,.9,.3]:heights;}
+ function layerHeights(plan){if(plan==='c')return [.3,.6,.3,.9,.9,.9,.9];return plan==='b'?[.3,.3,.3,.9,1.8,.9,.3]:heights;}
  return {update(show,progress,spread,plan='a'){
   root.visible=show;const h=layerHeights(plan),count=h.length;
   for(const {g,p} of groups){const q=layout(p,plan);g.visible=!q.hidden&&progress>=((q.layer+1)/count)-.01;g.position.x=q.x;g.position.z=q.z;g.position.y=-20+h.slice(0,q.layer).reduce((a,b)=>a+b+.1,0)+q.layer*spread+(q.lift||0);g.rotation.y=q.rot||0;}
