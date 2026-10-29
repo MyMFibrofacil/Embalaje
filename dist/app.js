@@ -98,7 +98,7 @@ function applyState(){
     }
     p.mesh.visible=!packing;p.proxy.visible=packing;p.holder.visible=visible;p.holder.position.lerp(pos,.18);p.holder.rotation.x=THREE.MathUtils.lerp(p.holder.rotation.x,rot.x,.18);p.holder.rotation.y=THREE.MathUtils.lerp(p.holder.rotation.y,rot.y,.18);p.holder.rotation.z=THREE.MathUtils.lerp(p.holder.rotation.z,rot.z,.18);p.holder.scale.setScalar(scale);
   });
-  if(packing){document.querySelector('#layerName').textContent=`Capa ${Math.max(1,Math.ceil(progress*7))} de 7`;document.querySelector('#layerNote').textContent='Fondos independientes · troquel y 4 trabas incluidos';}
+  if(packing){const count=plan==='c'?6:7;document.querySelector('#layerName').textContent=`Capa ${Math.max(1,Math.ceil(progress*count))} de ${count}`;document.querySelector('#layerNote').textContent=plan==='c'?'Orden de las fotos · protección de 40 × 70 cm incluida':'Fondos independientes · troquel y 4 trabas incluidos';}
 }
 const copy={assembled:['MODELO ARMADO','Casa completa','Modelo original de Fusion, a escala real.'],exploded:['DESPIECE','21 grupos del modelo','Separación progresiva de cada componente real.'],current:['SECUENCIA ACTUAL','Embalaje fotografiado','Apilado superpuesto con piezas chicas alojadas en huecos.'],optimized:['PROPUESTA DE EMBALAJE','Capas protegidas','Orden sugerido para reducir juego y proteger caras visibles.']};
 function setMode(next,instant=false){mode=next;document.querySelectorAll('.mode').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));const t=copy[mode];document.querySelector('#eyebrow').textContent=t[0];document.querySelector('#viewHeading').textContent=t[1];document.querySelector('#viewCopy').textContent=t[2];document.querySelector('#layerCard').hidden=!(mode==='current'||mode==='optimized');grid.visible=mode!=='assembled';if(mode==='assembled'||mode==='exploded'){camera.position.set(145,105,165);controls.target.set(0,0,0)}else{camera.position.set(105,145,150);controls.target.set(0,0,0)}if(instant)pieces.forEach(p=>p.holder.position.copy(p.assembled.clone().sub(assembledCenter())));applyState()}
@@ -120,19 +120,23 @@ document.querySelector('#layerList').innerHTML=['Fondo bajo','Fondo medio','Fond
 document.querySelectorAll('[data-layer]').forEach(el=>el.addEventListener('click',()=>{setMode('optimized');progress=(+el.dataset.layer+1)/7;document.querySelector('#progress').value=progress*100;document.querySelector('#progressLabel').textContent=`${+el.dataset.layer+1}/7 capas`;}));
 document.querySelector('.callout').innerHTML='<b>Escalones en un único troquel</b><p>155,2 × 110 × 3 mm. Las cuatro trabas se muestran con sus contornos del DXF. Los dos largueros se representan con el contorno izquierdo; confirmar el derecho antes de producir.</p>';
 function setPlan(next){
-  plan=next;const isB=plan==='b';
+  plan=next;const isB=plan==='b',isC=plan==='c';
   document.querySelectorAll('.plan').forEach(b=>b.classList.toggle('active',b.dataset.plan===plan));
-  document.querySelector('#planMetricTitle').textContent=isB?'Plan B · huella':'Plan A · huella';
-  document.querySelector('#planMetric').textContent='58,9 × 69,6 cm';
-  document.querySelector('#planMetricNote').textContent=isB?'Misma huella · +0,9 cm estimada de altura':'Sin caja ni protección exterior';
-  document.querySelector('.saving').innerHTML=isB?'<p>Plan B: dos pisos quedan juntos. El tercero gira 90° y comparte capa con los laterales, que se apilan. La capa de pisos queda más chica; la huella exterior la siguen definiendo los laterales.</p>':'<p>Plan A: los tres pisos se mantienen juntos. Es la referencia original para comparar el cambio.</p>';
-  document.querySelector('.callout').innerHTML=isB?'<b>Plan B · piso reubicado</b><p>El piso superior se coloca girado junto a los dos laterales superpuestos. Agrega 9 mm de altura en esa capa, pero conserva el bulto exterior.</p>':'<b>Plan A · tres pisos</b><p>Los tres pisos comparten una misma capa. Escalones, largueros y cuatro trabas viajan en el troquel de 3 mm.</p>';
-  const names=isB?['Fondo bajo','Fondo medio','Fondo superior','Dos pisos juntos','Piso superior + laterales','Dos techos, lado a lado','Troquel, largueros y cuatro trabas']:['Fondo bajo','Fondo medio','Fondo superior','Tres pisos, lado a lado','Dos laterales, lado a lado','Dos techos, lado a lado','Troquel, largueros y cuatro trabas'];
+  document.querySelector('#planMetricTitle').textContent=isC?'Según fotos · huella':isB?'Plan B · huella':'Plan A · huella';
+  document.querySelector('#planMetric').textContent=isC?'45,6 × 70 cm':'58,9 × 69,6 cm';
+  document.querySelector('#planMetricNote').textContent=isC?'Base protectora: 40 × 70 × 0,3 cm':isB?'Misma huella · +0,9 cm estimada de altura':'Sin caja ni protección exterior';
+  document.querySelector('.saving').innerHTML=isC?'<p>Secuencia copiada de las fotos. Los techos rotados definen el ancho máximo de 45,6 cm; la protección inferior mide 40 × 70 cm.</p>':isB?'<p>Plan B: dos pisos quedan juntos. El tercero gira 90° y comparte capa con los laterales, que se apilan. La capa de pisos queda más chica; la huella exterior la siguen definiendo los laterales.</p>':'<p>Plan A: los tres pisos se mantienen juntos. Es la referencia original para comparar el cambio.</p>';
+  document.querySelector('.callout').innerHTML=isC?'<b>Orden real de embalaje</b><p>Las cuatro trabas quedan dentro de las ventanas de los laterales. El troquel y los dos largueros viajan con el fondo triangular; los tres pisos cierran el paquete.</p>':isB?'<b>Plan B · piso reubicado</b><p>El piso superior se coloca girado junto a los dos laterales superpuestos. Agrega 9 mm de altura en esa capa, pero conserva el bulto exterior.</p>':'<b>Plan A · tres pisos</b><p>Los tres pisos comparten una misma capa. Escalones, largueros y cuatro trabas viajan en el troquel de 3 mm.</p>';
+  const names=isC?['Protección MDF · 40 × 70 × 0,3 cm','Dos fondos rectangulares superpuestos','Fondo triangular + escalera','Laterales + trabas dentro de ventanas','Dos techos girados 90°','Tres pisos superpuestos']:isB?['Fondo bajo','Fondo medio','Fondo superior','Dos pisos juntos','Piso superior + laterales','Dos techos, lado a lado','Troquel, largueros y cuatro trabas']:['Fondo bajo','Fondo medio','Fondo superior','Tres pisos, lado a lado','Dos laterales, lado a lado','Dos techos, lado a lado','Troquel, largueros y cuatro trabas'];
+  const count=names.length;
+  document.querySelector('.layer-list').previousElementSibling.innerHTML=`<span>Capas propuestas</span><span>${count}</span>`;
   document.querySelector('#layerList').innerHTML=names.map((n,i)=>`<li data-layer="${i}"><i>${i+1}</i><div><b>${n}</b></div></li>`).join('');
-  document.querySelectorAll('[data-layer]').forEach(el=>el.addEventListener('click',()=>{setMode('optimized');progress=(+el.dataset.layer+1)/7;document.querySelector('#progress').value=progress*100;document.querySelector('#progressLabel').textContent=`${+el.dataset.layer+1}/7 capas`;applyState();}));
+  document.querySelectorAll('[data-layer]').forEach(el=>el.addEventListener('click',()=>{setMode('optimized');progress=(+el.dataset.layer+1)/count;document.querySelector('#progress').value=progress*100;document.querySelector('#progressLabel').textContent=`${+el.dataset.layer+1}/${count} capas`;applyState();}));
+  copy.optimized[2]=isC?'Separación vertical para revisar las seis capas en el orden de las fotos.':'Separación vertical ampliada para inspeccionar las siete capas.';
+  if(mode==='optimized')document.querySelector('#viewCopy').textContent=copy.optimized[2];
   applyState();
 }
 document.querySelectorAll('.plan').forEach(b=>b.addEventListener('click',()=>setPlan(b.dataset.plan)));
-setPlan('a');
+setPlan('c');
 function resize(){const w=canvas.clientWidth,h=canvas.clientHeight;if(canvas.width!==w*renderer.getPixelRatio()||canvas.height!==h*renderer.getPixelRatio()){renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}}
 function loop(){resize();applyState();controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)}loop();
