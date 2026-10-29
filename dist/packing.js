@@ -12,5 +12,15 @@ export async function packing(scene){
   for(const ln of p.lines){const gg=new THREE.BufferGeometry().setFromPoints(ln.map(v=>new THREE.Vector3(v[0],p.t+.01,-v[1])));g.add(new THREE.Line(gg,new THREE.LineBasicMaterial({color:0x60462f})));}
   groups.push({g,p});
  }
- return {update(show,progress,spread){root.visible=show;for(const {g,p} of groups){g.visible=progress>=((p.layer+1)/7)-.01;g.position.y=-20+heights.slice(0,p.layer).reduce((a,b)=>a+b+.1,0)+p.layer*spread;}}};
+ const planB={
+  'Piso base':{layer:3,x:0,z:-10.5},'Piso con hueco':{layer:3,x:0,z:11},
+  'Piso superior':{layer:4,x:12,z:0,rot:Math.PI/2},
+  'Lateral izquierdo':{layer:4,x:-10,z:0},'Lateral derecho':{layer:4,x:-10,z:0,lift:.9}
+ };
+ function layout(p,plan){return plan==='b'&&planB[p.name]?{layer:p.layer,...planB[p.name]}:{layer:p.layer,x:p.x,z:p.z};}
+ function layerHeights(plan){return plan==='b'?[.3,.3,.3,.9,1.8,.9,.3]:heights;}
+ return {update(show,progress,spread,plan='a'){
+  root.visible=show;const h=layerHeights(plan);
+  for(const {g,p} of groups){const q=layout(p,plan);g.visible=progress>=((q.layer+1)/7)-.01;g.position.x=q.x;g.position.z=q.z;g.position.y=-20+h.slice(0,q.layer).reduce((a,b)=>a+b+.1,0)+q.layer*spread+(q.lift||0);g.rotation.y=q.rot||0;}
+ }};
 }

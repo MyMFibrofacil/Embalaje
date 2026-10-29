@@ -22,7 +22,7 @@ const dark=new THREE.MeshStandardMaterial({color:0x6b4a33,roughness:.72});
 const modelRoot=new THREE.Group(); scene.add(modelRoot);
 const baseMaterial=new THREE.MeshStandardMaterial({color:0xd7b48f,roughness:.9});
 const packBase=new THREE.Mesh(new THREE.BoxGeometry(60,.8,94),baseMaterial);packBase.position.y=-43;packBase.castShadow=true;packBase.receiveShadow=true;packBase.visible=false;modelRoot.add(packBase);
-let pieces=[], mode='assembled', progress=1, animation=null;
+let pieces=[], mode='assembled', progress=1, animation=null, plan='a';
 const layerNames=['Tapa exterior','Fondos impresos','Pisos y entrepisos','Laterales','Techos y escalera'];
 const layerNotes=['Placa lisa y cantoneras de cartón','Alinear los tres paños; impresión contra impresión','Separador fino entre caras mecanizadas','Ventanas enfrentadas para crear un bolsillo central','Bolsa de piezas chicas fijada, nunca suelta'];
 
@@ -83,7 +83,7 @@ function applyState(){
   modelRoot.rotation.x=THREE.MathUtils.lerp(modelRoot.rotation.x,(mode==='assembled'||mode==='exploded')?Math.PI/2:0,.18);
   const packing=mode==='current'||mode==='optimized';packBase.visible=packing&&progress>=.18;
   modelRoot.visible=!packing;
-  if(packView)packView.update(packing,progress,mode==='current'?0:7);
+  if(packView)packView.update(packing,progress,mode==='current'?0:7,plan);
   const c=assembledCenter();
   pieces.forEach((p,i)=>{
     let pos,rot=new THREE.Euler(),scale=1,visible=true;
@@ -113,11 +113,26 @@ copy.current=['BULTO COMPACTO','Propuesta apilada','Contornos DXF · separadores
 copy.optimized=['CAPAS SEPARADAS','Orden de embalaje','Separación vertical ampliada para inspeccionar las siete capas.'];
 document.querySelector('[data-mode="current"] span:last-child').innerHTML='<b>Bulto compacto</b><small>Propuesta apilada</small>';
 document.querySelector('[data-mode="optimized"] span:last-child').innerHTML='<b>Capas separadas</b><small>Contornos del DXF</small>';
-document.querySelector('.metric-grid article:last-child').innerHTML='<span>Huella de las piezas</span><strong>58,9 × 69,6 cm</strong><small>Sin caja ni protección exterior</small>';
+document.querySelector('.metric-grid article:last-child').innerHTML='<span id="planMetricTitle">Plan A · huella</span><strong id="planMetric">58,9 × 69,6 cm</strong><small id="planMetricNote">Sin caja ni protección exterior</small>';
 document.querySelector('.saving').innerHTML='<p>Espesor de escalones: 3 mm confirmado. Resto de espesores y cantidad final de trabas: validar con producción. No se declara ahorro porcentual.</p>';
 document.querySelector('.layer-list').previousElementSibling.innerHTML='<span>Capas propuestas</span><span>7</span>';
 document.querySelector('#layerList').innerHTML=['Fondo bajo','Fondo medio','Fondo superior','Tres pisos, lado a lado','Dos laterales, lado a lado','Dos techos, lado a lado','Troquel, largueros y cuatro trabas'].map((n,i)=>`<li data-layer="${i}"><i>${i+1}</i><div><b>${n}</b></div></li>`).join('');
 document.querySelectorAll('[data-layer]').forEach(el=>el.addEventListener('click',()=>{setMode('optimized');progress=(+el.dataset.layer+1)/7;document.querySelector('#progress').value=progress*100;document.querySelector('#progressLabel').textContent=`${+el.dataset.layer+1}/7 capas`;}));
 document.querySelector('.callout').innerHTML='<b>Escalones en un único troquel</b><p>155,2 × 110 × 3 mm. Las cuatro trabas se muestran con sus contornos del DXF. Los dos largueros se representan con el contorno izquierdo; confirmar el derecho antes de producir.</p>';
+function setPlan(next){
+  plan=next;const isB=plan==='b';
+  document.querySelectorAll('.plan').forEach(b=>b.classList.toggle('active',b.dataset.plan===plan));
+  document.querySelector('#planMetricTitle').textContent=isB?'Plan B · huella':'Plan A · huella';
+  document.querySelector('#planMetric').textContent='58,9 × 69,6 cm';
+  document.querySelector('#planMetricNote').textContent=isB?'Misma huella · +0,9 cm estimada de altura':'Sin caja ni protección exterior';
+  document.querySelector('.saving').innerHTML=isB?'<p>Plan B: dos pisos quedan juntos. El tercero gira 90° y comparte capa con los laterales, que se apilan. La capa de pisos queda más chica; la huella exterior la siguen definiendo los laterales.</p>':'<p>Plan A: los tres pisos se mantienen juntos. Es la referencia original para comparar el cambio.</p>';
+  document.querySelector('.callout').innerHTML=isB?'<b>Plan B · piso reubicado</b><p>El piso superior se coloca girado junto a los dos laterales superpuestos. Agrega 9 mm de altura en esa capa, pero conserva el bulto exterior.</p>':'<b>Plan A · tres pisos</b><p>Los tres pisos comparten una misma capa. Escalones, largueros y cuatro trabas viajan en el troquel de 3 mm.</p>';
+  const names=isB?['Fondo bajo','Fondo medio','Fondo superior','Dos pisos juntos','Piso superior + laterales','Dos techos, lado a lado','Troquel, largueros y cuatro trabas']:['Fondo bajo','Fondo medio','Fondo superior','Tres pisos, lado a lado','Dos laterales, lado a lado','Dos techos, lado a lado','Troquel, largueros y cuatro trabas'];
+  document.querySelector('#layerList').innerHTML=names.map((n,i)=>`<li data-layer="${i}"><i>${i+1}</i><div><b>${n}</b></div></li>`).join('');
+  document.querySelectorAll('[data-layer]').forEach(el=>el.addEventListener('click',()=>{setMode('optimized');progress=(+el.dataset.layer+1)/7;document.querySelector('#progress').value=progress*100;document.querySelector('#progressLabel').textContent=`${+el.dataset.layer+1}/7 capas`;applyState();}));
+  applyState();
+}
+document.querySelectorAll('.plan').forEach(b=>b.addEventListener('click',()=>setPlan(b.dataset.plan)));
+setPlan('a');
 function resize(){const w=canvas.clientWidth,h=canvas.clientHeight;if(canvas.width!==w*renderer.getPixelRatio()||canvas.height!==h*renderer.getPixelRatio()){renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}}
 function loop(){resize();applyState();controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)}loop();
