@@ -31,6 +31,12 @@ export function correctPocketStack(pieces){
   const find=name=>{const p=pieces.find(p=>p.name===name);if(!p)throw new Error(`Pieza faltante: ${name}`);return p};
   const move=(p,x,y,z)=>{p.packed.x+=x;p.packed.y+=y;p.packed.z+=z;for(const side of ['min','max']){p.box[side].x+=x;p.box[side].y+=y;p.box[side].z+=z}};
   const above=(p,top)=>move(p,0,top+.02-p.box.min.y,0);
+  const fondoBajo=find('fondo bajo');
+  for(const name of ['Cuerpo120','Cuerpo121']){
+    const supplement=find(name),width=supplement.box.max.x-supplement.box.min.x,depth=supplement.box.max.z-supplement.box.min.z;
+    const targetX=fondoBajo.box.max.x-width/2,targetZ=fondoBajo.box.min.z+depth/2;
+    move(supplement,targetX-supplement.packed.x,fondoBajo.box.max.y+.02-supplement.box.min.y,targetZ-supplement.packed.z);
+  }
   const supportTop=Math.max(...pocketSequence[10].pieces.filter(n=>n.startsWith('Cuerpo')).map(n=>find(n).box.max.y));
   const lowerHandle=find('manija 2 (1)'),upperHandle=find('manija 2');
   const supportBottom=Math.min(...pocketSequence[10].pieces.filter(n=>n.startsWith('Cuerpo')).map(n=>find(n).box.min.y));

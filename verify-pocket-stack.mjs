@@ -11,6 +11,9 @@ for(const p of pieces){const pts=[...p.indices].map(i=>vertices[i]);p.box={min:{
 assignPocketSequence(pieces);correctPocketStack(pieces);
 const get=n=>pieces.find(p=>p.name===n);
 const over=(a,b)=>{assert(a.box.min.y>b.box.max.y,`${a.name} must be above ${b.name}`);console.log(`${a.name}: underside ${a.box.min.y.toFixed(3)} > ${b.name}: top ${b.box.max.y.toFixed(3)}`)};
+const fondoBajo=get('fondo bajo');
+for(const name of ['Cuerpo120','Cuerpo121']){const supplement=get(name);over(supplement,fondoBajo);assert(Math.abs(supplement.box.max.x-fondoBajo.box.max.x)<1e-6);assert(Math.abs(supplement.box.min.z-fondoBajo.box.min.z)<1e-6);console.log(`${name}: aligned to fondo bajo upper-right corner`)}
+for(const a of ['x','y','z'])assert(Math.abs(get('Cuerpo120').packed[a]-get('Cuerpo121').packed[a])<1e-6);
 const door=get('Pta Heladera Sup'),rack=get('Cuerpo126');over(door,rack);
 for(const a of ['x','z'])assert(Math.abs(door.packed[a]-rack.packed[a])<1e-6);
 for(const n of ['techo alzada','base alzada']){over(get(n),get('Pta Heladera Inf'));over(get('piso'),get(n))}
