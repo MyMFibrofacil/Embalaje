@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="description" content="Visualizador 3D de muebles y secuencias de embalaje" />
   <title>Visualizador de embalajes 3D</title>
-  <link rel="stylesheet" href="./styles.css?v=20261030-8" />
+  <link rel="stylesheet" href="./styles.css?v=20261030-14" />
   <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
 </head>
 <body>
@@ -34,7 +34,7 @@
   <main class="app-shell" id="appShell" hidden>
     <header class="topbar">
       <div class="brand"><span class="mark" id="productMark">C60</span><div><h1 id="productTitle">Casa 60</h1><p id="productSubtitle">Despiece y embalaje</p></div></div>
-      <div class="top-actions"><span class="status"><i></i><span id="loadStatus">Cargando modelos…</span></span><button class="ghost" id="changeProduct">Elegir otro mueble</button><button class="ghost" id="resetView">Recentrar vista</button></div>
+      <div class="top-actions"><span class="status"><i></i><span id="loadStatus">Cargando modelos…</span></span><button class="ghost" id="changeProduct" aria-label="Elegir otro mueble"><span class="desktop-label">Elegir otro mueble</span><span class="mobile-label">Muebles</span></button><button class="ghost" id="resetView">Recentrar vista</button></div>
     </header>
 
     <section class="workspace">
@@ -61,6 +61,6 @@
       </section>
     </section>
   </main>
-  <script type="module" src="./app.js?v=20261030-13"></script>
+  <script type="module" src="./app.js?v=20261030-14"></script>
 </body>
 </html>
