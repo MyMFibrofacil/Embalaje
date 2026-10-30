@@ -16,9 +16,13 @@
     <header class="topbar">
       <div class="brand">
         <span class="mark" aria-hidden="true">C60</span>
-        <div><h1>Casa 60</h1><p>Estudio de embalaje · modelo de producción</p></div>
+        <div><h1 id="productTitle">Casa 60</h1><p id="productSubtitle">Estudio de embalaje · modelo de producción</p></div>
       </div>
       <div class="top-actions">
+        <div class="product-switch" aria-label="Producto visualizado">
+          <button class="product active" data-product="casa60">Casa 60</button>
+          <button class="product" data-product="pocket">Cocina Pocket</button>
+        </div>
         <span class="status"><i></i><span id="loadStatus">Cargando modelo real…</span></span>
         <button class="ghost" id="resetView">Recentrar vista</button>
       </div>
@@ -86,6 +90,6 @@
       </aside>
     </section>
   </main>
-  <script type="module" src="./app.js?v=20261029-4"></script>
+  <script type="module" src="./app.js?v=20261030-5"></script>
 </body>
 </html>
