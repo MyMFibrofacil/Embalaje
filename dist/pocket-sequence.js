@@ -25,3 +25,21 @@ export function assignPocketSequence(pieces){
   for(const p of pieces){if(!lookup.has(p.name))throw new Error(`Pieza sin paso de embalaje: ${p.name}`);p.layer=lookup.get(p.name)}
   for(const name of lookup.keys())if(!pieces.some(p=>p.name===name))throw new Error(`Pieza faltante: ${name}`);
 }
+
+// Change packed coordinates as well as reveal order. Boxes stay in world space.
+export function correctPocketStack(pieces){
+  const find=name=>{const p=pieces.find(p=>p.name===name);if(!p)throw new Error(`Pieza faltante: ${name}`);return p};
+  const move=(p,x,y,z)=>{p.packed.x+=x;p.packed.y+=y;p.packed.z+=z;for(const side of ['min','max']){p.box[side].x+=x;p.box[side].y+=y;p.box[side].z+=z}};
+  const above=(p,top)=>move(p,0,top+.02-p.box.min.y,0);
+  const supportTop=Math.max(...pocketSequence[10].pieces.filter(n=>n.startsWith('Cuerpo')).map(n=>find(n).box.max.y));
+  above(find('manija 2 (1)'),supportTop);
+  const rack=find('Cuerpo126'),door=find('Pta Heladera Sup');
+  move(door,(rack.box.min.x+rack.box.max.x-door.box.min.x-door.box.max.x)/2,0,(rack.box.min.z+rack.box.max.z-door.box.min.z-door.box.max.z)/2);
+  above(door,rack.box.max.y);
+  const lowerDoor=find('Pta Heladera Inf');
+  const roof=[find('techo alzada'),find('base alzada')];
+  roof.forEach(p=>above(p,lowerDoor.box.max.y));
+  // The following closing panels must follow the newly raised roof/base pair.
+  const floor=find('piso');above(floor,Math.max(...roof.map(p=>p.box.max.y)));
+  above(find('fondo heladera'),floor.box.max.y);
+}
