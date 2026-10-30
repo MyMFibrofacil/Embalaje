@@ -14,3 +14,15 @@
   .supplies-trigger{background:#18222a;color:#fff}.supplies-sheet{place-items:end center;padding:0}.supplies-panel{width:100%;max-height:88dvh;border-radius:18px 18px 0 0}.supplies-head{padding:18px 16px 13px}.supplies-head h2{font-family:inherit;font-size:20px}.supplies-content{grid-template-columns:1fr;gap:12px;padding:14px}.hardware-bag{min-height:285px;padding:42px 14px 16px}.hardware-item{min-height:94px}.supply-detail{padding:12px 14px}.supply-detail strong{font-family:inherit;font-size:18px}.supplies-panel footer{padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
 }
 @media(max-width:370px){.brand h1{max-width:155px}.library-head h1{font-size:30px}.product-card{grid-template-columns:78px minmax(0,1fr) 22px;grid-template-rows:82px}.card-copy{padding:12px 10px}.card-copy b{font-size:17px}}
+
+/* El control de capas pertenece a Embalado; Armado conserva la interfaz mínima. */
+body.packing-mode .left-panel>.divider{display:block!important}
+body.packing-mode .left-panel>.section-label.row{display:flex!important}
+body.packing-mode #progress{display:block!important}
+body.packing-mode #layerStepper{display:grid!important}
+@media(max-width:800px){
+  body.packing-mode .left-panel>.divider{margin:7px 0 6px}
+  body.packing-mode .left-panel>.section-label.row{margin:0 2px 4px}
+  body.packing-mode #layerStepper{grid-template-columns:44px 1fr 44px;margin-top:6px}
+  body.packing-mode #layerStepper button{height:32px}
+}
