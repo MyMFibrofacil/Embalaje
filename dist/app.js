@@ -19,6 +19,7 @@ const mdf=new THREE.MeshStandardMaterial({color:0xbc8d61,roughness:.8});
 const pale=new THREE.MeshStandardMaterial({color:0xe9ddca,roughness:.84});
 const dark=new THREE.MeshStandardMaterial({color:0x6b4a33,roughness:.74});
 const aluminum=new THREE.MeshStandardMaterial({color:0x89969c,roughness:.3,metalness:.68});
+const edgeMaterial=new THREE.LineBasicMaterial({color:0x38271e,transparent:true,opacity:.82});
 const casaRoot=new THREE.Group();casaRoot.rotation.x=Math.PI/2;scene.add(casaRoot);
 const pocketAssembledRoot=new THREE.Group();scene.add(pocketAssembledRoot);
 const pocketPackedRoot=new THREE.Group();scene.add(pocketPackedRoot);
@@ -31,9 +32,10 @@ let pocketLayerNames=['Cargando capas…'];
 function allMeshes(root){const out=[];root.traverse(o=>{if(o.isMesh)out.push(o)});return out}
 function casaMaterial(name){if(name.toLowerCase().includes('fondo'))return pale;if(name.startsWith('Cuerpo')||name==='Escalera')return dark;return mdf}
 function pocketMaterial(name){return name.toLowerCase().includes('bacha')?aluminum:mdf}
+function addPieceEdges(mesh){const edges=new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry,25),edgeMaterial);edges.renderOrder=1;mesh.add(edges)}
 function makePieces(raw,root,materialFor,target,keyName){
   const meshes=allMeshes(raw),boxAll=new THREE.Box3();
-  meshes.forEach((mesh,index)=>{mesh.geometry.computeBoundingBox();const box=mesh.geometry.boundingBox.clone(),center=box.getCenter(new THREE.Vector3());boxAll.expandByPoint(box.min);boxAll.expandByPoint(box.max);mesh.geometry.translate(-center.x,-center.y,-center.z);mesh.material=materialFor(mesh.name||'');mesh.castShadow=true;mesh.receiveShadow=true;const holder=new THREE.Group();holder.name=mesh.name||`Pieza ${index+1}`;holder.userData.pieceName=holder.name;mesh.userData.pieceName=holder.name;holder.add(mesh);root.add(holder);target.push({holder,name:holder.name,[keyName]:center.clone(),index})});
+  meshes.forEach((mesh,index)=>{mesh.geometry.computeBoundingBox();const box=mesh.geometry.boundingBox.clone(),center=box.getCenter(new THREE.Vector3());boxAll.expandByPoint(box.min);boxAll.expandByPoint(box.max);mesh.geometry.translate(-center.x,-center.y,-center.z);mesh.material=materialFor(mesh.name||'');addPieceEdges(mesh);mesh.castShadow=true;mesh.receiveShadow=true;const holder=new THREE.Group();holder.name=mesh.name||`Pieza ${index+1}`;holder.userData.pieceName=holder.name;mesh.userData.pieceName=holder.name;holder.add(mesh);root.add(holder);target.push({holder,name:holder.name,[keyName]:center.clone(),index})});
   const center=boxAll.getCenter(new THREE.Vector3());target.forEach(p=>{p[keyName].sub(center);p.holder.position.copy(p[keyName])});
 }
 
@@ -42,7 +44,7 @@ new OBJLoader().load('./assets/casa60.obj',raw=>{makePieces(raw,casaRoot,casaMat
 new OBJLoader().load('./assets/cocina-integral-pocket.obj',raw=>{makePieces(raw,pocketAssembledRoot,pocketMaterial,pocketAssembledPieces,'assembled');refreshStatus();applyState()},undefined,console.error);
 new OBJLoader().load('./assets/cocina-integral-pocket-embalada.obj',raw=>{
   const meshes=allMeshes(raw),boxAll=new THREE.Box3(),temp=[];
-  meshes.forEach((mesh,index)=>{mesh.geometry.computeBoundingBox();const box=mesh.geometry.boundingBox.clone(),center=box.getCenter(new THREE.Vector3());boxAll.expandByPoint(box.min);boxAll.expandByPoint(box.max);mesh.geometry.translate(-center.x,-center.y,-center.z);mesh.material=pocketMaterial(mesh.name||'');mesh.castShadow=true;mesh.receiveShadow=true;const holder=new THREE.Group();holder.name=mesh.name||`Pieza ${index+1}`;holder.userData.pieceName=holder.name;mesh.userData.pieceName=holder.name;holder.add(mesh);pocketPackedRoot.add(holder);temp.push({holder,name:holder.name,packed:center.clone(),world:center.clone(),box,index})});
+  meshes.forEach((mesh,index)=>{mesh.geometry.computeBoundingBox();const box=mesh.geometry.boundingBox.clone(),center=box.getCenter(new THREE.Vector3());boxAll.expandByPoint(box.min);boxAll.expandByPoint(box.max);mesh.geometry.translate(-center.x,-center.y,-center.z);mesh.material=pocketMaterial(mesh.name||'');addPieceEdges(mesh);mesh.castShadow=true;mesh.receiveShadow=true;const holder=new THREE.Group();holder.name=mesh.name||`Pieza ${index+1}`;holder.userData.pieceName=holder.name;mesh.userData.pieceName=holder.name;holder.add(mesh);pocketPackedRoot.add(holder);temp.push({holder,name:holder.name,packed:center.clone(),world:center.clone(),box,index})});
   const center=boxAll.getCenter(new THREE.Vector3());
   assignPocketSequence(temp);
   correctPocketStack(temp);
