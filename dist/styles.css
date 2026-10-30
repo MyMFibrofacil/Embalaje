@@ -26,3 +26,11 @@ body.packing-mode #layerStepper{display:grid!important}
   body.packing-mode #layerStepper{grid-template-columns:44px 1fr 44px;margin-top:6px}
   body.packing-mode #layerStepper button{height:32px}
 }
+.bag-items.single{grid-template-columns:1fr}
+.hardware-item b{font-size:10px;color:var(--accent);font-weight:900}
+.hardware-svg{display:block;width:76px;height:56px;filter:drop-shadow(0 4px 3px rgba(24,34,42,.18))}
+@media(max-width:800px){
+  body.packing-mode .layer-card{display:block;bottom:12px;padding:10px 12px}
+  body.packing-mode .layer-card strong{font-size:13px;white-space:normal;line-height:1.25}
+  body.packing-mode .layer-card small{display:block;margin-top:4px;font-size:9px}
+}
