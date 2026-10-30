@@ -45,6 +45,12 @@ export function correctPocketStack(pieces){
   const rack=find('Cuerpo126'),door=find('Pta Heladera Sup');
   move(door,(rack.box.min.x+rack.box.max.x-door.box.min.x-door.box.max.x)/2,0,(rack.box.min.z+rack.box.max.z-door.box.min.z-door.box.max.z)/2);
   above(door,rack.box.max.y);
+  // Keep the alzada handle inside its own layer instead of floating between layers:
+  // same height as the alzada front, centered between the nearest burner and washer door.
+  const alzadaHandle=find('manija 1'),alzadaFront=find('frente alzada'),nearBurner=find('hornalla'),washerDoor=find('Pta Lavarropas');
+  const handleTargetX=(nearBurner.box.max.x+washerDoor.box.min.x)/2;
+  const handleTargetZ=(nearBurner.packed.z+washerDoor.packed.z)/2;
+  move(alzadaHandle,handleTargetX-alzadaHandle.packed.x,alzadaFront.box.min.y-alzadaHandle.box.min.y,handleTargetZ-alzadaHandle.packed.z);
   const lowerDoor=find('Pta Heladera Inf');
   const roof=[find('techo alzada'),find('base alzada')];
   roof.forEach(p=>above(p,lowerDoor.box.max.y));

@@ -21,5 +21,10 @@ over(get('fondo heladera'),get('piso'));
 for(const n of ['Cuerpo122','Cuerpo123','Cuerpo124','Cuerpo125']){over(get('manija 2'),get(n));over(get(n),get('manija 2 (1)'))}
 assert.equal(get('manija 2 (1)').layer,9);assert.equal(get('manija 2').layer,10);assert.equal(get('manija 1').layer,14);
 for(const a of ['x','z'])assert(Math.abs(get('manija 2').packed[a]-get('manija 2 (1)').packed[a])<1e-6);
+const alzadaHandle=get('manija 1'),alzadaFront=get('frente alzada'),nearBurner=get('hornalla'),washerDoor=get('Pta Lavarropas');
+assert(Math.abs(alzadaHandle.box.min.y-alzadaFront.box.min.y)<1e-6,'alzada handle must share the front alzada plane');
+assert(alzadaHandle.box.min.x>nearBurner.box.max.x,'alzada handle must sit after the nearest burner');
+assert(alzadaHandle.box.max.x<washerDoor.box.min.x,'alzada handle must sit before the washer door');
+assert(Math.abs(alzadaHandle.packed.z-(nearBurner.packed.z+washerDoor.packed.z)/2)<1e-6,'alzada handle must be centered between burner and washer door');
 assert.equal(pieces.length,47);assert.equal(new Set(pieces.map(p=>p.layer)).size,19);
 console.log('47 pieces, 19 steps; corrected stack relations verified.');
