@@ -11,10 +11,10 @@ export const pocketSequence = [
   {label:'Tapa',pieces:['Tapa','parante bajo']},
   {label:'Grifo + manija inferior',pieces:['Grifo','manija 2 (1)']},
   {label:'Suplementos + manija superior',pieces:['Cuerpo122','Cuerpo123','Cuerpo124','Cuerpo125','manija 2']},
-  {label:'Puerta horno + estante',pieces:['Pta Horno','estante heladera','estante heladera (1) (1)']},
+  {label:'Puerta horno + estante',pieces:['Pta Horno','estante heladera (1) (1)']},
   {label:'Rejilla horno + estante',pieces:['Cuerpo126','estante heladera (1)']},
   {label:'Puerta heladera superior + puerta lavarropas',pieces:['Pta Heladera Sup','Pta Lavarropas','Frente Lavarropas']},
-  {label:'Puerta alzada + hornallas + frente alzada + manija + parante alzada',pieces:['Pta Alzada','hornalla','hornalla (1)','frente alzada','manija 1','Parante Alzada']},
+  {label:'Puerta alzada + hornallas + frente alzada + manija + parante alzada + estante',pieces:['Pta Alzada','hornalla','hornalla (1)','frente alzada','manija 1','Parante Alzada','estante heladera']},
   {label:'Puerta heladera inferior',pieces:['Pta Heladera Inf']},
   {label:'Techo y base alzada',pieces:['techo alzada','base alzada']},
   {label:'Piso',pieces:['piso']},
@@ -51,7 +51,13 @@ export function correctPocketStack(pieces){
   const handleTargetX=(nearBurner.box.max.x+washerDoor.box.min.x)/2;
   const handleTargetZ=(nearBurner.packed.z+washerDoor.packed.z)/2;
   move(alzadaHandle,handleTargetX-alzadaHandle.packed.x,alzadaFront.box.min.y-alzadaHandle.box.min.y,handleTargetZ-alzadaHandle.packed.z);
+  // The wide shelf fills the gap between the upper fridge door and the alzada set.
+  const alzadaShelf=find('estante heladera');
+  above(alzadaShelf,door.box.max.y);
+  const alzadaParts=pocketSequence[14].pieces.filter(n=>n!=='estante heladera').map(find);
+  alzadaParts.forEach(p=>above(p,alzadaShelf.box.max.y));
   const lowerDoor=find('Pta Heladera Inf');
+  above(lowerDoor,Math.max(...alzadaParts.map(p=>p.box.max.y)));
   const roof=[find('techo alzada'),find('base alzada')];
   roof.forEach(p=>above(p,lowerDoor.box.max.y));
   // The following closing panels must follow the newly raised roof/base pair.
