@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { OBJLoader } from './vendor/OBJLoader.js';
-import { packing } from './packing.js?v=20261029-3';
+import { packing } from './packing.js?v=20261029-4';
 let packView;
 
 const canvas=document.querySelector('#viewer');
