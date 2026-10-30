@@ -24,7 +24,7 @@ const casaRoot=new THREE.Group();casaRoot.rotation.x=Math.PI/2;scene.add(casaRoo
 const pocketAssembledRoot=new THREE.Group();scene.add(pocketAssembledRoot);
 const pocketPackedRoot=new THREE.Group();scene.add(pocketPackedRoot);
 let casaPackView=null,casaPieces=[],pocketAssembledPieces=[],pocketPackedPieces=[],pocketLayerCount=1;
-let product=null,mode='exploded',explode=.55,activeLayer=1,animation=null;
+let product=null,mode='current',explode=0,activeLayer=1,animation=null;
 
 const casaLayerNames=['Protección MDF · 40 × 70 × 0,3 cm','Dos fondos rectangulares superpuestos','Fondo triangular + escalera en el mismo plano','Laterales + dos trabas por ventanita','Dos techos girados 90°','Dos pisos lado a lado','Tercer piso superior'];
 let pocketLayerNames=['Cargando capas…'];
@@ -49,7 +49,7 @@ new OBJLoader().load('./assets/cocina-integral-pocket-embalada.obj',raw=>{
   assignPocketSequence(temp);
   correctPocketStack(temp);
   temp.forEach(p=>{p.packed.sub(center);p.holder.position.copy(p.packed);pocketPackedPieces.push(p)});
-  pocketLayerCount=pocketSequence.length;pocketLayerNames=pocketSequence.map(step=>step.label);
+  pocketLayerCount=pocketSequence.length;pocketLayerNames=pocketSequence.map(step=>step.label);if(product==='pocket'&&mode==='current')activeLayer=pocketLayerCount;
   refreshStatus();configureProgress();applyState();
 },undefined,console.error);
 
@@ -66,20 +66,20 @@ function applyState(){
   if(casaPackView)casaPackView.update(casa&&packed,activeLayer/7,mode==='optimized'?7:0,'c');
   if(!packed){grid.visible=true;document.querySelector('#layerCard').hidden=true;if(casa&&casaPieces.length)applyExploded(casaPieces,'assembled',explode*48);if(!casa&&pocketAssembledPieces.length)applyExploded(pocketAssembledPieces,'assembled',explode*42);return}
   if(!casa&&pocketPackedPieces.length){const count=pocketLayerCount;for(const p of pocketPackedPieces){const pos=p.packed.clone();if(mode==='optimized')pos.y+=(p.layer-(count-1)/2)*2.65;p.holder.position.lerp(pos,.22);p.holder.visible=p.layer<activeLayer}}
-  const names=layerNames(),idx=Math.max(0,Math.min(activeLayer-1,names.length-1));document.querySelector('#layerCard').hidden=false;document.querySelector('#layerName').textContent=`${activeLayer} · ${names[idx]}`;document.querySelector('#layerNote').textContent=product==='pocket'?'Orden de embalaje confirmado · 19 pasos':'Avance discreto, una capa por vez.';
+  const names=layerNames(),idx=Math.max(0,Math.min(activeLayer-1,names.length-1)),showLayer=mode==='optimized';document.querySelector('#layerCard').hidden=!showLayer;if(showLayer){document.querySelector('#layerName').textContent=`${activeLayer} · ${names[idx]}`;document.querySelector('#layerNote').textContent=product==='pocket'?'Orden de embalaje confirmado · 19 pasos':'Avance discreto, una capa por vez.'}
 }
 
 const copy={
-  casa60:{exploded:['DESPIECE','Casa 60','Separación progresiva de los 21 grupos del modelo.'],current:['EMBALADA','Casa 60 · bulto compacto','Secuencia real de las fotos, capa por capa.'],optimized:['CAPAS','Casa 60 · capas separadas','Cada plano se eleva para revisar su contenido.']},
-  pocket:{exploded:['DESPIECE','Cocina Integral Pocket','Separación progresiva de los 40 grupos del modelo.'],current:['EMBALADA','Cocina Pocket · bulto compacto','Orden real: piezas chicas, bacha y tapa.'],optimized:['CAPAS','Cocina Pocket · capas separadas','Inspección del apilado, una capa por vez.']}
+  casa60:{exploded:['ARMADO','Casa 60 · armada','Modelo completo en su posición de uso.'],current:['EMBALADO','Casa 60 · paquete completo','Todas las piezas en su posición final de embalaje.'],optimized:['CAPAS','Casa 60 · capas separadas','Cada plano se eleva para revisar su contenido.']},
+  pocket:{exploded:['ARMADO','Cocina Integral Pocket · armada','Modelo completo en su posición de uso.'],current:['EMBALADO','Cocina Pocket · paquete completo','Todas las piezas en su posición final de embalaje.'],optimized:['CAPAS','Cocina Pocket · capas separadas','Inspección del apilado, una capa por vez.']}
 };
 function setCamera(){const mobile=matchMedia('(max-width: 800px)').matches;const cam=product==='casa60'?(isPacking()?(mobile?[125,180,205]:[105,145,150]):(mobile?[210,175,250]:[170,130,195])):(isPacking()?(mobile?[135,165,175]:[110,125,120]):(mobile?[225,185,260]:[190,145,210]));camera.position.set(...cam);controls.target.set(0,0,0);controls.update()}
 function configureProgress(){const range=document.querySelector('#progress'),stepper=document.querySelector('#layerStepper');if(isPacking()){const count=layerCount();activeLayer=Math.max(1,Math.min(activeLayer,count));range.min=1;range.max=count;range.step=1;range.value=activeLayer;range.setAttribute('aria-label','Capa activa');document.querySelector('#progressTitle').textContent='Capas';document.querySelector('#progressLabel').textContent=`${activeLayer}/${count}`;document.querySelector('#layerStepLabel').textContent=`Capa ${activeLayer} de ${count}`;document.querySelector('#previousLayer').disabled=activeLayer<=1;document.querySelector('#nextLayer').disabled=activeLayer>=count;stepper.hidden=false}else{range.min=0;range.max=100;range.step=1;range.value=Math.round(explode*100);range.setAttribute('aria-label','Separación del despiece');document.querySelector('#progressTitle').textContent='Separación';document.querySelector('#progressLabel').textContent=`${Math.round(explode*100)}%`;stepper.hidden=true}}
-function setMode(next,reset=true){mode=next;document.body.classList.toggle('packing-mode',isPacking());document.querySelectorAll('.mode').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));if(reset){if(isPacking())activeLayer=1;else explode=.55}const t=copy[product][mode];document.querySelector('#eyebrow').textContent=t[0];document.querySelector('#viewHeading').textContent=t[1];document.querySelector('#viewCopy').textContent=t[2];document.querySelector('#playSequence').hidden=!isPacking();document.querySelector('#pieceInfo').hidden=true;configureProgress();setCamera();applyState()}
-function selectProduct(next){product=next;document.querySelector('#library').hidden=true;document.querySelector('#appShell').hidden=false;document.querySelector('#productMark').textContent=product==='casa60'?'C60':'CIP';document.querySelector('#productTitle').textContent=product==='casa60'?'Casa 60':'Cocina Integral Pocket';document.querySelector('#productSubtitle').textContent='Despiece · embalaje · capas';document.title=`${document.querySelector('#productTitle').textContent} · Visualizador 3D`;document.querySelector('[data-mode="exploded"] small').textContent=product==='casa60'?'21 grupos reales':'40 grupos reales';refreshStatus();setMode('exploded',true)}
+function setMode(next,reset=true){mode=next;document.body.classList.toggle('packing-mode',isPacking());document.body.classList.toggle('assembled-mode',!isPacking());document.querySelectorAll('.mode').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));if(reset){if(isPacking())activeLayer=layerCount();else explode=0}const t=copy[product][mode];document.querySelector('#eyebrow').textContent=t[0];document.querySelector('#viewHeading').textContent=t[1];document.querySelector('#viewCopy').textContent=t[2];document.querySelector('#playSequence').hidden=true;document.querySelector('#pieceInfo').hidden=true;configureProgress();setCamera();applyState()}
+function selectProduct(next){product=next;document.querySelector('#library').hidden=true;document.querySelector('#appShell').hidden=false;document.querySelector('#productMark').textContent=product==='casa60'?'C60':'CIP';document.querySelector('#productTitle').textContent=product==='casa60'?'Casa 60':'Cocina Integral Pocket';document.querySelector('#productSubtitle').textContent='Armado · embalado · insumos';document.title=`${document.querySelector('#productTitle').textContent} · Visualizador 3D`;refreshStatus();setMode('current',true)}
 
 document.querySelectorAll('[data-choose]').forEach(b=>b.addEventListener('click',()=>selectProduct(b.dataset.choose)));
-document.querySelector('#changeProduct').addEventListener('click',()=>{document.body.classList.remove('packing-mode');document.querySelector('#library').hidden=false;document.querySelector('#appShell').hidden=true;if(animation){cancelAnimationFrame(animation);animation=null}});
+document.querySelector('#changeProduct').addEventListener('click',()=>{document.body.classList.remove('packing-mode','assembled-mode');document.querySelector('#library').hidden=false;document.querySelector('#appShell').hidden=true;if(animation){cancelAnimationFrame(animation);animation=null}});
 document.querySelectorAll('.mode').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode,true)));
 document.querySelector('#resetView').addEventListener('click',setCamera);
 document.querySelector('#progress').addEventListener('input',e=>{if(isPacking())activeLayer=+e.target.value;else explode=+e.target.value/100;configureProgress();applyState()});
@@ -91,6 +91,13 @@ const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();let pointerSta
 canvas.addEventListener('pointerdown',e=>{pointerStart=[e.clientX,e.clientY]});
 canvas.addEventListener('pointerup',e=>{if(!pointerStart||Math.hypot(e.clientX-pointerStart[0],e.clientY-pointerStart[1])>6)return;const r=canvas.getBoundingClientRect();pointer.x=((e.clientX-r.left)/r.width)*2-1;pointer.y=-((e.clientY-r.top)/r.height)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(scene.children,true);let name=null;for(const hit of hits){let o=hit.object;while(o&&!name){name=o.userData?.pieceName;o=o.parent}if(name)break}if(name){document.querySelector('#pieceName').textContent=name;document.querySelector('#pieceInfo').hidden=false}});
 document.querySelector('#closePiece').addEventListener('click',()=>{document.querySelector('#pieceInfo').hidden=true});
+
+const suppliesSheet=document.querySelector('#suppliesSheet');
+function closeSupplies(){suppliesSheet.hidden=true;document.body.classList.remove('supplies-open')}
+document.querySelector('#openSupplies').addEventListener('click',()=>{document.querySelector('#suppliesProduct').textContent=product==='casa60'?'Casa 60':'Cocina Integral Pocket';suppliesSheet.hidden=false;document.body.classList.add('supplies-open')});
+document.querySelector('#closeSupplies').addEventListener('click',closeSupplies);document.querySelector('#suppliesBackdrop').addEventListener('click',closeSupplies);
+document.querySelectorAll('.hardware-item').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('.hardware-item').forEach(item=>item.classList.toggle('active',item===button));document.querySelector('#supplyName').textContent=button.dataset.supply;document.querySelector('#supplyMeta').textContent='Medida y cantidad por confirmar'}));
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!suppliesSheet.hidden)closeSupplies()});
 
 const requested=new URLSearchParams(location.search).get('product');if(requested==='casa60'||requested==='pocket')selectProduct(requested);
 function resize(){const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;if(canvas.width!==w*renderer.getPixelRatio()||canvas.height!==h*renderer.getPixelRatio()){renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}}

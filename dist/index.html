@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="description" content="Visualizador 3D de muebles y secuencias de embalaje" />
   <title>Visualizador de embalajes 3D</title>
-  <link rel="stylesheet" href="./styles.css?v=20261030-17" />
+  <link rel="stylesheet" href="./styles.css?v=20261030-20" />
   <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
 </head>
 <body>
@@ -14,7 +14,7 @@
       <header class="library-head">
         <span class="library-kicker">VISUALIZADOR 3D · PRODUCCIÓN</span>
         <h1>Elegí el mueble</h1>
-        <p>Revisá el despiece, el bulto embalado y cada capa en su orden real.</p>
+        <p>Revisá el mueble armado, su embalaje y la bolsita de insumos.</p>
       </header>
       <div class="product-cards">
         <button class="product-card" data-choose="casa60">
@@ -34,16 +34,15 @@
   <main class="app-shell" id="appShell" hidden>
     <header class="topbar">
       <div class="brand"><span class="mark" id="productMark">C60</span><div><h1 id="productTitle">Casa 60</h1><p id="productSubtitle">Despiece y embalaje</p></div></div>
-      <div class="top-actions"><span class="status"><i></i><span id="loadStatus">Cargando modelos…</span></span><button class="ghost" id="changeProduct" aria-label="Elegir otro mueble"><span class="desktop-label">Elegir otro mueble</span><span class="mobile-label">Muebles</span></button><button class="ghost" id="resetView">Recentrar vista</button></div>
+      <div class="top-actions"><span class="status"><i></i><span id="loadStatus">Cargando modelos…</span></span><button class="ghost supplies-trigger" id="openSupplies">Insumos</button><button class="ghost" id="changeProduct" aria-label="Elegir otro mueble"><span class="desktop-label">Elegir otro mueble</span><span class="mobile-label">Muebles</span></button><button class="ghost" id="resetView">Recentrar vista</button></div>
     </header>
 
     <section class="workspace">
       <aside class="left-panel panel">
         <div class="section-label">Vista</div>
         <nav class="mode-tabs" aria-label="Modos de visualización">
-          <button class="mode active" data-mode="exploded"><span class="num">01</span><span><b>Despiece</b><small>Grupos del modelo</small></span></button>
-          <button class="mode" data-mode="current"><span class="num">02</span><span><b>Embalada</b><small>Bulto compacto</small></span></button>
-          <button class="mode recommended" data-mode="optimized"><span class="num">03</span><span><b>Capas</b><small>Una por una</small></span></button>
+          <button class="mode" data-mode="exploded"><span class="num">01</span><span><b>Armado</b><small>Modelo completo</small></span></button>
+          <button class="mode active" data-mode="current"><span class="num">02</span><span><b>Embalado</b><small>Paquete completo</small></span></button>
         </nav>
         <div class="divider"></div>
         <div class="section-label row"><span id="progressTitle">Separación</span><output id="progressLabel">55%</output></div>
@@ -54,13 +53,36 @@
 
       <section class="viewer-wrap" aria-label="Visualizador tridimensional">
         <canvas id="viewer"></canvas>
-        <div class="view-title"><span id="eyebrow">DESPIECE</span><h2 id="viewHeading">Casa 60</h2><p id="viewCopy">Separación progresiva de las piezas reales.</p></div>
+        <div class="view-title"><span id="eyebrow">EMBALADO</span><h2 id="viewHeading">Casa 60 · paquete completo</h2><p id="viewCopy">Todas las piezas en su posición final de embalaje.</p></div>
         <div class="piece-info" id="pieceInfo" hidden><span>PIEZA</span><strong id="pieceName"></strong><button id="closePiece" aria-label="Cerrar">×</button></div>
         <div class="layer-card" id="layerCard" hidden><span>CAPA ACTIVA</span><strong id="layerName"></strong><small id="layerNote"></small></div>
         <button class="play" id="playSequence"><span>▶</span> Reproducir capas</button>
       </section>
     </section>
   </main>
-  <script type="module" src="./app.js?v=20261030-19"></script>
+
+  <section class="supplies-sheet" id="suppliesSheet" hidden>
+    <button class="sheet-backdrop" id="suppliesBackdrop" aria-label="Cerrar insumos"></button>
+    <article class="supplies-panel" role="dialog" aria-modal="true" aria-labelledby="suppliesHeading">
+      <header class="supplies-head">
+        <div><span>VISTA PREVIA · FALTA LISTA REAL</span><h2 id="suppliesHeading">Bolsita de insumos</h2><p id="suppliesProduct">Casa 60</p></div>
+        <button id="closeSupplies" aria-label="Cerrar">×</button>
+      </header>
+      <div class="supplies-content">
+        <div class="hardware-bag">
+          <div class="bag-seal"></div>
+          <div class="bag-items" aria-label="Ejemplos de insumos">
+            <button class="hardware-item active" data-supply="Tornillos"><i class="hardware-icon screw"></i><span>Tornillos</span></button>
+            <button class="hardware-item" data-supply="Bulones"><i class="hardware-icon bolt"></i><span>Bulones</span></button>
+            <button class="hardware-item" data-supply="Tarugos"><i class="hardware-icon dowel"></i><span>Tarugos</span></button>
+            <button class="hardware-item" data-supply="Minifix"><i class="hardware-icon minifix"></i><span>Minifix</span></button>
+          </div>
+        </div>
+        <div class="supply-detail"><span>INSUMO SELECCIONADO</span><strong id="supplyName">Tornillos</strong><small id="supplyMeta">Medida y cantidad por confirmar</small></div>
+      </div>
+      <footer>Para completarlo necesito: nombre, medida y cantidad de cada insumo por producto.</footer>
+    </article>
+  </section>
+  <script type="module" src="./app.js?v=20261030-20"></script>
 </body>
 </html>
