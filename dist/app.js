@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { OBJLoader } from './vendor/OBJLoader.js';
-import { packing } from './packing.js?v=20261030-8';
+import { packing } from './packing.js?v=20261030-16';
 import { pocketSequence, assignPocketSequence, correctPocketStack } from './pocket-sequence.js?v=20261030-15';
 
 const canvas=document.querySelector('#viewer');

@@ -29,9 +29,11 @@ export async function packing(scene){
   'Fondo de protección 40 × 70':{layer:0,x:0,z:0},
   'Fondo bajo':{layer:1,x:0,z:0,rot:-Math.PI/2},
   'Fondo medio':{layer:1,x:0,z:0,rot:-Math.PI/2,lift:.3},
-  'Fondo superior':{layer:2,x:5.5,z:0,rot:-Math.PI/2},
-  'Larguero escalera 1':{layer:2,x:10.19,z:16.83,rot:-.691},
-  'Larguero escalera 2':{layer:2,x:10.19,z:-16.83,rot:-(Math.PI-.691)},
+  // Capa 3, según la disposición real: la base larga del fondo triangular
+  // queda contra el borde derecho y los largueros acompañan sus dos diagonales.
+  'Fondo superior':{layer:2,x:5.7,z:0,rot:Math.PI/2},
+  'Larguero escalera 1':{layer:2,x:4,z:-16.65,rot:-.691},
+  'Larguero escalera 2':{layer:2,x:4,z:16.65,rot:-(Math.PI-.691)},
   'Troquel completo de escalones · 3 mm':{layer:2,x:-14.5,z:20,rot:Math.PI/2},
   'Lateral izquierdo':{layer:3,x:-11,z:0},
   'Lateral derecho':{layer:3,x:11,z:0},
