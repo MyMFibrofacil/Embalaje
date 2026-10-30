@@ -7,7 +7,7 @@ export async function packing(scene){
   for(const h of p.holes)shape.holes.push(new THREE.Path(h.map(v=>new THREE.Vector2(...v))));
   const geo=new THREE.ExtrudeGeometry(shape,{depth:p.t,bevelEnabled:false});geo.rotateX(-Math.PI/2);
   const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:p.layer<3?0xeee6d6:0xb98d62,roughness:.8}));
-  const g=new THREE.Group();g.add(mesh);g.position.set(p.x,0,p.z);root.add(g);
+  const g=new THREE.Group();g.userData.pieceName=p.name;mesh.userData.pieceName=p.name;g.add(mesh);g.position.set(p.x,0,p.z);root.add(g);
   const edges=new THREE.LineSegments(new THREE.EdgesGeometry(geo),new THREE.LineBasicMaterial({color:0x60462f}));g.add(edges);
   for(const ln of p.lines){const gg=new THREE.BufferGeometry().setFromPoints(ln.map(v=>new THREE.Vector3(v[0],p.t+.01,-v[1])));g.add(new THREE.Line(gg,new THREE.LineBasicMaterial({color:0x60462f})));}
   groups.push({g,p});
@@ -15,6 +15,7 @@ export async function packing(scene){
  const protection=new THREE.Group();
  const protectionGeo=new THREE.BoxGeometry(40,.3,70);
  const protectionMesh=new THREE.Mesh(protectionGeo,new THREE.MeshStandardMaterial({color:0xa97d54,roughness:.88}));
+ protection.userData.pieceName='Fondo de protección 40 × 70';protectionMesh.userData.pieceName='Fondo de protección 40 × 70';
  protectionMesh.position.y=.15;protection.add(protectionMesh);
  protection.add(new THREE.LineSegments(new THREE.EdgesGeometry(protectionGeo),new THREE.LineBasicMaterial({color:0x60462f})));
  root.add(protection);
@@ -50,7 +51,7 @@ export async function packing(scene){
   return plan==='b'&&planB[p.name]?{layer:p.layer,...planB[p.name]}:{layer:p.layer,x:p.x,z:p.z};
  }
  function layerHeights(plan){if(plan==='c')return [.3,.6,.3,.9,.9,.9,.9];return plan==='b'?[.3,.3,.3,.9,1.8,.9,.3]:heights;}
- return {update(show,progress,spread,plan='a'){
+ return {root,update(show,progress,spread,plan='a'){
   root.visible=show;const h=layerHeights(plan),count=h.length;
   for(const {g,p} of groups){const q=layout(p,plan);g.visible=!q.hidden&&progress>=((q.layer+1)/count)-.01;g.position.x=q.x;g.position.z=q.z;g.position.y=-20+h.slice(0,q.layer).reduce((a,b)=>a+b+.1,0)+q.layer*spread+(q.lift||0);g.rotation.y=q.rot||0;}
  }};
