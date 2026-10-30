@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { OBJLoader } from './vendor/OBJLoader.js';
 import { packing } from './packing.js?v=20261030-8';
+import { pocketSequence, assignPocketSequence } from './pocket-sequence.js?v=20261030-9';
 
 const canvas=document.querySelector('#viewer');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
@@ -42,11 +43,10 @@ new OBJLoader().load('./assets/cocina-integral-pocket.obj',raw=>{makePieces(raw,
 new OBJLoader().load('./assets/cocina-integral-pocket-embalada.obj',raw=>{
   const meshes=allMeshes(raw),boxAll=new THREE.Box3(),temp=[];
   meshes.forEach((mesh,index)=>{mesh.geometry.computeBoundingBox();const box=mesh.geometry.boundingBox.clone(),center=box.getCenter(new THREE.Vector3());boxAll.expandByPoint(box.min);boxAll.expandByPoint(box.max);mesh.geometry.translate(-center.x,-center.y,-center.z);mesh.material=pocketMaterial(mesh.name||'');mesh.castShadow=true;mesh.receiveShadow=true;const holder=new THREE.Group();holder.name=mesh.name||`Pieza ${index+1}`;holder.userData.pieceName=holder.name;mesh.userData.pieceName=holder.name;holder.add(mesh);pocketPackedRoot.add(holder);temp.push({holder,name:holder.name,packed:center.clone(),world:center.clone(),box,index})});
-  const center=boxAll.getCenter(new THREE.Vector3()),minY=boxAll.min.y;
-  const bacha=temp.find(p=>p.name.toLowerCase()==='bacha'),sinkBox=bacha?.box;
-  temp.forEach(p=>{const worldY=p.packed.y;p.packed.sub(center);p.baseLayer=Math.max(0,Math.round((worldY-minY-.15)/.9));const n=p.name.toLowerCase(),candidate=/^(canilla|grifo|perillas?|tirador|manija|cuerpo12)/.test(n),inside=sinkBox&&p.world.x>=sinkBox.min.x-7&&p.world.x<=sinkBox.max.x+7&&p.world.z>=sinkBox.min.z-8&&p.world.z<=sinkBox.max.z+8,small=candidate&&inside;p.rawStage=small?5:n==='bacha'?6:p.name==='Tapa'?7:p.baseLayer<=4?p.baseLayer:p.baseLayer+3;p.holder.position.copy(p.packed)});
-  const stages=[...new Set(temp.map(p=>p.rawStage))].sort((a,b)=>a-b),stageMap=new Map(stages.map((s,i)=>[s,i]));temp.forEach(p=>{p.layer=stageMap.get(p.rawStage);pocketPackedPieces.push(p)});pocketLayerCount=stages.length;
-  pocketLayerNames=Array.from({length:pocketLayerCount},(_,layer)=>{const ps=pocketPackedPieces.filter(p=>p.layer===layer),names=ps.map(p=>p.name),lower=names.map(n=>n.toLowerCase());if(ps.some(p=>p.rawStage===5))return 'Perillas, grifería y piezas chicas dentro de la bacha';if(lower.includes('bacha'))return 'Bacha de aluminio';if(names.includes('Tapa'))return 'Tapa de la bacha';return names.slice(0,2).join(' + ')+(names.length>2?` + ${names.length-2} más`:'')});
+  const center=boxAll.getCenter(new THREE.Vector3());
+  assignPocketSequence(temp);
+  temp.forEach(p=>{p.packed.sub(center);p.holder.position.copy(p.packed);pocketPackedPieces.push(p)});
+  pocketLayerCount=pocketSequence.length;pocketLayerNames=pocketSequence.map(step=>step.label);
   refreshStatus();configureProgress();applyState();
 },undefined,console.error);
 
@@ -63,7 +63,7 @@ function applyState(){
   if(casaPackView)casaPackView.update(casa&&packed,activeLayer/7,mode==='optimized'?7:0,'c');
   if(!packed){grid.visible=true;document.querySelector('#layerCard').hidden=true;if(casa&&casaPieces.length)applyExploded(casaPieces,'assembled',explode*48);if(!casa&&pocketAssembledPieces.length)applyExploded(pocketAssembledPieces,'assembled',explode*42);return}
   if(!casa&&pocketPackedPieces.length){const count=pocketLayerCount;for(const p of pocketPackedPieces){const pos=p.packed.clone();if(mode==='optimized')pos.y+=(p.layer-(count-1)/2)*2.65;p.holder.position.lerp(pos,.22);p.holder.visible=p.layer<activeLayer}}
-  const names=layerNames(),idx=Math.max(0,Math.min(activeLayer-1,names.length-1));document.querySelector('#layerCard').hidden=false;document.querySelector('#layerName').textContent=`${activeLayer} · ${names[idx]}`;document.querySelector('#layerNote').textContent=product==='pocket'&&names[idx].startsWith('Perillas')?'Primero van todas las piezas chicas dentro de la bacha.':product==='pocket'&&names[idx]==='Bacha de aluminio'?'Después se coloca la bacha alrededor de las piezas chicas.':product==='pocket'&&names[idx]==='Tapa de la bacha'?'La tapa cierra este conjunto; debe colocarse después de la bacha.':'Avance discreto, una capa por vez.';
+  const names=layerNames(),idx=Math.max(0,Math.min(activeLayer-1,names.length-1));document.querySelector('#layerCard').hidden=false;document.querySelector('#layerName').textContent=`${activeLayer} · ${names[idx]}`;document.querySelector('#layerNote').textContent=product==='pocket'?'Orden de embalaje confirmado · 19 pasos':'Avance discreto, una capa por vez.';
 }
 
 const copy={
