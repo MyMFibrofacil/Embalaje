@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { OBJLoader } from './vendor/OBJLoader.js';
-import { packing } from './packing.js?v=20261030-5';
+import { packing } from './packing.js?v=20261030-6';
 let packView;
 
 const canvas=document.querySelector('#viewer');
@@ -21,9 +21,10 @@ const pale=new THREE.MeshStandardMaterial({color:0xe8dcc9,roughness:.82});
 const dark=new THREE.MeshStandardMaterial({color:0x6b4a33,roughness:.72});
 const modelRoot=new THREE.Group(); scene.add(modelRoot);
 const pocketRoot=new THREE.Group(); pocketRoot.visible=false; scene.add(pocketRoot);
+const pocketAssembledRoot=new THREE.Group(); pocketAssembledRoot.visible=false; scene.add(pocketAssembledRoot);
 const baseMaterial=new THREE.MeshStandardMaterial({color:0xd7b48f,roughness:.9});
 const packBase=new THREE.Mesh(new THREE.BoxGeometry(60,.8,94),baseMaterial);packBase.position.y=-43;packBase.castShadow=true;packBase.receiveShadow=true;packBase.visible=false;modelRoot.add(packBase);
-let pieces=[], pocketPieces=[], pocketLayerCount=1, product='casa60', mode='assembled', progress=1, animation=null, plan='a';
+let pieces=[], pocketPieces=[], pocketAssembledPieces=[], pocketLayerCount=1, product='casa60', mode='assembled', progress=1, animation=null, plan='a';
 const layerNames=['Tapa exterior','Fondos impresos','Pisos y entrepisos','Laterales','Techos y escalera'];
 const layerNotes=['Placa lisa y cantoneras de cartón','Alinear los tres paños; impresión contra impresión','Separador fino entre caras mecanizadas','Ventanas enfrentadas para crear un bolsillo central','Bolsa de piezas chicas fijada, nunca suelta'];
 
@@ -49,7 +50,7 @@ new OBJLoader().load('./assets/casa60.obj', raw=>{
     const sz=proxySize(holder.name,box.getSize(new THREE.Vector3()));const proxy=new THREE.Mesh(new THREE.BoxGeometry(...sz),materialFor(holder.name));proxy.visible=false;proxy.castShadow=true;proxy.receiveShadow=true;holder.add(proxy);modelRoot.add(holder);
     pieces.push({holder,mesh,proxy,name:holder.name,assembled:center.clone(),index,layer:layerOf(holder.name),baseRot:new THREE.Euler(),packRot:packingRotation(holder.name)});
   });
-  document.querySelector('#loadStatus').textContent=`Modelo listo · ${pieces.length} grupos`;
+  document.querySelector('#loadStatus').textContent=product==='casa60'?`Modelo listo · ${pieces.length} grupos`:document.querySelector('#loadStatus').textContent;
   document.querySelector('.status').classList.add('loaded');
   setMode('assembled',true);
 },undefined,err=>{document.querySelector('#loadStatus').textContent='No se pudo cargar el OBJ';console.error(err)});
@@ -58,6 +59,17 @@ const pocketMdf=new THREE.MeshStandardMaterial({color:0xb98d62,roughness:.78});
 const pocketLight=new THREE.MeshStandardMaterial({color:0xe8dcc9,roughness:.82});
 const pocketMetal=new THREE.MeshStandardMaterial({color:0x8b969b,roughness:.42,metalness:.55});
 function pocketMaterial(name){const n=name.toLowerCase();if(n.includes('canilla')||n.includes('grifo')||n.includes('bacha')||n.includes('perilla'))return pocketMetal;if(n.includes('fondo'))return pocketLight;return pocketMdf}
+function updatePocketStatus(){if(product!=='pocket')return;const ready=pocketPieces.length&&pocketAssembledPieces.length;document.querySelector('#loadStatus').textContent=ready?`Cocina lista · ${pocketAssembledPieces.length} grupos armados + ${pocketPieces.length} embalados`:'Cargando modelos de Cocina Pocket…';if(ready)document.querySelector('.status').classList.add('loaded')}
+new OBJLoader().load('./assets/cocina-integral-pocket.obj',raw=>{
+  const meshes=allMeshes(raw),boxAll=new THREE.Box3();
+  meshes.forEach((mesh,index)=>{
+    mesh.geometry.computeBoundingBox();const box=mesh.geometry.boundingBox.clone(),center=box.getCenter(new THREE.Vector3());boxAll.expandByPoint(box.min);boxAll.expandByPoint(box.max);
+    mesh.geometry.translate(-center.x,-center.y,-center.z);mesh.material=pocketMaterial(mesh.name||'');mesh.castShadow=true;mesh.receiveShadow=true;
+    const holder=new THREE.Group();holder.name=mesh.name||`Pieza ${index+1}`;holder.add(mesh);pocketAssembledRoot.add(holder);pocketAssembledPieces.push({holder,name:holder.name,assembled:center.clone(),index});
+  });
+  const center=boxAll.getCenter(new THREE.Vector3());pocketAssembledPieces.forEach(p=>{p.assembled.sub(center);p.holder.position.copy(p.assembled)});
+  updatePocketStatus();if(product==='pocket')applyState();
+},undefined,err=>{console.error(err);if(product==='pocket')document.querySelector('#loadStatus').textContent='No se pudo cargar la Cocina armada'});
 new OBJLoader().load('./assets/cocina-integral-pocket-embalada.obj',raw=>{
   const meshes=allMeshes(raw),boxAll=new THREE.Box3();
   meshes.forEach((mesh,index)=>{
@@ -71,7 +83,7 @@ new OBJLoader().load('./assets/cocina-integral-pocket-embalada.obj',raw=>{
   pocketPieces.forEach(p=>{p.packed.sub(center);p.layer=Math.max(0,Math.round(((p.packed.y+center.y)-minY-.15)/.9));p.holder.position.copy(p.packed)});
   pocketLayerCount=Math.max(...pocketPieces.map(p=>p.layer))+1;
   if(product==='pocket'){renderPocketLayers();applyState()}
-  document.querySelector('#loadStatus').textContent=product==='pocket'?`Cocina lista · ${pocketPieces.length} grupos · ${pocketLayerCount} capas`:`Modelos listos · Casa 60 + Cocina Pocket`;
+  document.querySelector('#loadStatus').textContent=product==='pocket'?`Cocina lista · ${pocketAssembledPieces.length} grupos armados + ${pocketPieces.length} embalados`:`Modelos listos · Casa 60 + Cocina Pocket`;
   document.querySelector('.status').classList.add('loaded');
 },undefined,err=>{console.error(err);if(product==='pocket')document.querySelector('#loadStatus').textContent='No se pudo cargar Cocina Pocket'});
 
@@ -102,18 +114,19 @@ function packPosition(p,optimized){
 }
 function applyState(){
   if(product==='pocket'){
-    modelRoot.visible=false;if(packView)packView.update(false,0,0,plan);pocketRoot.visible=true;grid.visible=true;
-    if(!pocketPieces.length)return;
-    const separated=mode==='exploded'||mode==='optimized',sequential=mode==='current'||mode==='optimized';
-    pocketPieces.forEach(p=>{
-      const pos=p.packed.clone();if(separated)pos.y+=(p.layer-(pocketLayerCount-1)/2)*2.8;
-      p.holder.position.lerp(pos,.2);p.holder.visible=!sequential||progress+.001>=(p.layer+1)/pocketLayerCount;
-    });
-    document.querySelector('#layerCard').hidden=!(mode==='current'||mode==='optimized');
-    if(sequential){const active=Math.max(1,Math.ceil(progress*pocketLayerCount));document.querySelector('#layerName').textContent=`Capa ${active} de ${pocketLayerCount}`;document.querySelector('#layerNote').textContent='Orden y posición tomados directamente del OBJ embalado';}
+    modelRoot.visible=false;if(packView)packView.update(false,0,0,plan);const assembledMode=mode==='assembled'||mode==='exploded';pocketAssembledRoot.visible=assembledMode;pocketRoot.visible=!assembledMode;grid.visible=mode!=='assembled';
+    if(assembledMode){
+      if(!pocketAssembledPieces.length)return;
+      pocketAssembledPieces.forEach((p,i)=>{const pos=p.assembled.clone();if(mode==='exploded'){const dir=pos.clone().normalize();if(dir.length()<.1)dir.set(Math.sin(i),.4,Math.cos(i));pos.add(dir.multiplyScalar((1-progress)*42))}p.holder.position.lerp(pos,.2);p.holder.visible=true});
+      document.querySelector('#layerCard').hidden=true;
+    }else{
+      if(!pocketPieces.length)return;const separated=mode==='optimized',sequential=true;
+      pocketPieces.forEach(p=>{const pos=p.packed.clone();if(separated)pos.y+=(p.layer-(pocketLayerCount-1)/2)*2.8;p.holder.position.lerp(pos,.2);p.holder.visible=progress+.001>=(p.layer+1)/pocketLayerCount});
+      document.querySelector('#layerCard').hidden=false;const active=Math.max(1,Math.ceil(progress*pocketLayerCount));document.querySelector('#layerName').textContent=`Capa ${active} de ${pocketLayerCount}`;document.querySelector('#layerNote').textContent='Orden y posición tomados directamente del OBJ embalado';
+    }
     return;
   }
-  pocketRoot.visible=false;
+  pocketRoot.visible=false;pocketAssembledRoot.visible=false;
   if(!pieces.length)return;
   modelRoot.rotation.x=THREE.MathUtils.lerp(modelRoot.rotation.x,(mode==='assembled'||mode==='exploded')?Math.PI/2:0,.18);
   const packing=mode==='current'||mode==='optimized';packBase.visible=packing&&progress>=.18;
@@ -136,8 +149,8 @@ function applyState(){
   if(packing){const count=7;document.querySelector('#layerName').textContent=`Capa ${Math.max(1,Math.ceil(progress*count))} de ${count}`;document.querySelector('#layerNote').textContent=plan==='c'?'Orden de las fotos · protección de 40 × 70 cm incluida':'Fondos independientes · troquel y 4 trabas incluidos';}
 }
 const copy={assembled:['MODELO ARMADO','Casa completa','Modelo original de Fusion, a escala real.'],exploded:['DESPIECE','21 grupos del modelo','Separación progresiva de cada componente real.'],current:['SECUENCIA ACTUAL','Embalaje fotografiado','Apilado superpuesto con piezas chicas alojadas en huecos.'],optimized:['PROPUESTA DE EMBALAJE','Capas protegidas','Orden sugerido para reducir juego y proteger caras visibles.']};
-const pocketCopy={assembled:['OBJ EMBALADO','Cocina Integral Pocket','Acomodado exacto recibido, sin reinterpretar posiciones.'],exploded:['LECTURA POR CAPAS','Separación del apilado','Las capas se abren sobre el eje de espesor para inspección.'],current:['SECUENCIA DEL OBJ','Bulto compacto','Revelado progresivo respetando el orden del archivo embalado.'],optimized:['CAPAS SEPARADAS','Cocina Integral Pocket','Posiciones originales con separación vertical para revisar cada plano.']};
-function setMode(next,instant=false){mode=next;document.querySelectorAll('.mode').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));const t=(product==='pocket'?pocketCopy:copy)[mode];document.querySelector('#eyebrow').textContent=t[0];document.querySelector('#viewHeading').textContent=t[1];document.querySelector('#viewCopy').textContent=t[2];document.querySelector('#layerCard').hidden=!(mode==='current'||mode==='optimized');grid.visible=product==='pocket'||mode!=='assembled';if(product==='pocket'){camera.position.set(100,115,105);controls.target.set(0,0,0)}else if(mode==='assembled'||mode==='exploded'){camera.position.set(145,105,165);controls.target.set(0,0,0)}else{camera.position.set(105,145,150);controls.target.set(0,0,0)}if(instant&&product==='casa60')pieces.forEach(p=>p.holder.position.copy(p.assembled.clone().sub(assembledCenter())));applyState()}
+const pocketCopy={assembled:['MODELO ARMADO','Cocina Integral Pocket','Producto terminado tomado del OBJ armado original.'],exploded:['DESPIECE','40 grupos del modelo','Separación progresiva de cada componente real.'],current:['OBJ EMBALADO','Bulto compacto','Acomodado exacto recibido, sin reinterpretar posiciones.'],optimized:['CAPAS SEPARADAS','Cocina Integral Pocket','Posiciones originales con separación vertical para revisar cada plano.']};
+function setMode(next,instant=false){mode=next;document.querySelectorAll('.mode').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));const t=(product==='pocket'?pocketCopy:copy)[mode];document.querySelector('#eyebrow').textContent=t[0];document.querySelector('#viewHeading').textContent=t[1];document.querySelector('#viewCopy').textContent=t[2];document.querySelector('#layerCard').hidden=!(mode==='current'||mode==='optimized');grid.visible=product==='pocket'||mode!=='assembled';if(product==='pocket'){const cam=mode==='exploded'?[190,145,210]:mode==='assembled'?[145,115,165]:[110,125,120];camera.position.set(...cam);controls.target.set(0,0,0)}else if(mode==='assembled'||mode==='exploded'){camera.position.set(145,105,165);controls.target.set(0,0,0)}else{camera.position.set(105,145,150);controls.target.set(0,0,0)}if(instant&&product==='casa60')pieces.forEach(p=>p.holder.position.copy(p.assembled.clone().sub(assembledCenter())));applyState()}
 function updateLayer(i){document.querySelector('#layerName').textContent=`${i+1} · ${layerNames[i]}`;document.querySelector('#layerNote').textContent=layerNotes[i];document.querySelectorAll('.layer-list li').forEach((el,j)=>el.classList.toggle('active',i===j))}
 
 document.querySelectorAll('.mode').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
@@ -183,17 +196,17 @@ function renderPocketLayers(){
 }
 function setProduct(next){
   product=next;const pocket=product==='pocket';document.title=pocket?'Cocina Integral Pocket · Embalaje 3D':'Casa 60 · Embalaje 3D';document.body.classList.toggle('pocket-mode',pocket);document.querySelectorAll('.product').forEach(b=>b.classList.toggle('active',b.dataset.product===product));
-  document.querySelector('.plan-switch').hidden=pocket;document.querySelector('.mark').textContent=pocket?'CIP':'C60';document.querySelector('#productTitle').textContent=pocket?'Cocina Integral Pocket':'Casa 60';document.querySelector('#productSubtitle').textContent=pocket?'OBJ embalado · capas de producción':'Estudio de embalaje · modelo de producción';
-  const labels=pocket?[['Embalada','Acomodado original'],['Capas','Separación vertical'],['Secuencia','Orden del OBJ'],['Inspección','Capas separadas']]:[['Armada','Producto terminado'],['Despiece','21 grupos reales'],['Bulto compacto','Propuesta apilada'],['Capas separadas','Contornos del DXF']];
+  document.querySelector('.plan-switch').hidden=pocket;document.querySelector('.mark').textContent=pocket?'CIP':'C60';document.querySelector('#productTitle').textContent=pocket?'Cocina Integral Pocket':'Casa 60';document.querySelector('#productSubtitle').textContent=pocket?'Modelo armado + embalado · producción':'Estudio de embalaje · modelo de producción';
+  const labels=pocket?[['Armada','Producto terminado'],['Despiece','40 grupos reales'],['Embalada','Acomodado original'],['Capas','13 niveles separados']]:[['Armada','Producto terminado'],['Despiece','21 grupos reales'],['Bulto compacto','Propuesta apilada'],['Capas separadas','Contornos del DXF']];
   document.querySelectorAll('.mode').forEach((b,i)=>{b.querySelector('b').textContent=labels[i][0];b.querySelector('small').textContent=labels[i][1]});
   if(pocket){
-    document.querySelector('.metric-grid').innerHTML='<article><span>Huella embalada</span><strong>88,4 × 42,7</strong><small>cm · envolvente exacta del OBJ</small></article><article><span>Altura apilada</span><strong>11,1 cm</strong><small>desde la primera hasta la última capa</small></article>';
-    document.querySelector('.saving').innerHTML='<p>El archivo ya viene acomodado. El visor conserva las coordenadas de las 47 piezas y sólo agrega separación vertical cuando se inspeccionan las capas.</p>';
-    document.querySelector('.callout').innerHTML='<b>Importación directa</b><p>No se reordenaron piezas. La clasificación por capas se toma del eje de espesor del OBJ embalado.</p>';renderPocketLayers();
+    document.querySelector('.metric-grid').innerHTML='<article><span>Producto armado</span><strong>89,4 × 88 × 35,5</strong><small>cm · envolvente exacta del OBJ armado</small></article><article><span>Bulto embalado</span><strong>88,4 × 42,7 × 11,1</strong><small>cm · envolvente exacta del OBJ embalado</small></article>';
+    document.querySelector('.saving').innerHTML='<p>El visor usa dos archivos originales: el OBJ armado para producto y despiece, y el OBJ embalado para bulto compacto e inspección de capas.</p>';
+    document.querySelector('.callout').innerHTML='<b>Dos modelos, una comparación</b><p>Las vistas Armada y Despiece usan 40 grupos reales. Embalada y Capas conservan las 47 piezas y coordenadas del archivo acomodado.</p>';renderPocketLayers();
   }else{
     document.querySelector('.metric-grid').innerHTML='<article><span>Producto armado</span><strong>70,4 × 24,4 × 94,4</strong><small>cm · envolvente del OBJ</small></article><article><span id="planMetricTitle">Según fotos · huella</span><strong id="planMetric">45,6 × 70 cm</strong><small id="planMetricNote">Base protectora: 40 × 70 × 0,3 cm</small></article>';setPlan(plan);
   }
-  progress=1;document.querySelector('#progress').value=100;document.querySelector('#progressLabel').textContent='100%';document.querySelector('#loadStatus').textContent=pocket?(pocketPieces.length?`Cocina lista · ${pocketPieces.length} grupos · ${pocketLayerCount} capas`:'Cargando Cocina Pocket…'):(pieces.length?'Modelos listos · Casa 60 + Cocina Pocket':'Cargando Casa 60…');setMode('assembled',true);
+  progress=1;document.querySelector('#progress').value=100;document.querySelector('#progressLabel').textContent='100%';document.querySelector('#loadStatus').textContent=pocket?(pocketPieces.length&&pocketAssembledPieces.length?`Cocina lista · ${pocketAssembledPieces.length} grupos armados + ${pocketPieces.length} embalados`:'Cargando modelos de Cocina Pocket…'):(pieces.length?'Modelos listos · Casa 60 + Cocina Pocket':'Cargando Casa 60…');setMode('assembled',true);
 }
 document.querySelectorAll('.product').forEach(b=>b.addEventListener('click',()=>setProduct(b.dataset.product)));
 if(new URLSearchParams(location.search).get('product')==='pocket')setProduct('pocket');
