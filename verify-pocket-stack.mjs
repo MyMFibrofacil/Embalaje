@@ -15,6 +15,8 @@ const door=get('Pta Heladera Sup'),rack=get('Cuerpo126');over(door,rack);
 for(const a of ['x','z'])assert(Math.abs(door.packed[a]-rack.packed[a])<1e-6);
 for(const n of ['techo alzada','base alzada']){over(get(n),get('Pta Heladera Inf'));over(get('piso'),get(n))}
 over(get('fondo heladera'),get('piso'));
-for(const n of ['Cuerpo122','Cuerpo123','Cuerpo124','Cuerpo125'])over(get('manija 2 (1)'),get(n));
+for(const n of ['Cuerpo122','Cuerpo123','Cuerpo124','Cuerpo125']){over(get('manija 2'),get(n));over(get(n),get('manija 2 (1)'))}
+assert.equal(get('manija 2 (1)').layer,9);assert.equal(get('manija 2').layer,10);assert.equal(get('manija 1').layer,14);
+for(const a of ['x','z'])assert(Math.abs(get('manija 2').packed[a]-get('manija 2 (1)').packed[a])<1e-6);
 assert.equal(pieces.length,47);assert.equal(new Set(pieces.map(p=>p.layer)).size,19);
 console.log('47 pieces, 19 steps; corrected stack relations verified.');

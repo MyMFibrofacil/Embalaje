@@ -9,12 +9,12 @@ export const pocketSequence = [
   {label:'Bacha',pieces:['bacha']},
   {label:'Lateral izquierdo + zócalo',pieces:['lateral izq','zocalo']},
   {label:'Tapa',pieces:['Tapa','parante bajo']},
-  {label:'Grifo + manija',pieces:['Grifo','manija 1']},
-  {label:'Suplementos + manija arriba',pieces:['Cuerpo122','Cuerpo123','Cuerpo124','Cuerpo125','manija 2 (1)']},
+  {label:'Grifo + manija inferior',pieces:['Grifo','manija 2 (1)']},
+  {label:'Suplementos + manija superior',pieces:['Cuerpo122','Cuerpo123','Cuerpo124','Cuerpo125','manija 2']},
   {label:'Puerta horno + estante',pieces:['Pta Horno','estante heladera','estante heladera (1) (1)']},
   {label:'Rejilla horno + estante',pieces:['Cuerpo126','estante heladera (1)']},
   {label:'Puerta heladera superior + puerta lavarropas',pieces:['Pta Heladera Sup','Pta Lavarropas','Frente Lavarropas']},
-  {label:'Puerta alzada + hornallas + frente alzada + manija + parante alzada',pieces:['Pta Alzada','hornalla','hornalla (1)','frente alzada','manija 2','Parante Alzada']},
+  {label:'Puerta alzada + hornallas + frente alzada + manija + parante alzada',pieces:['Pta Alzada','hornalla','hornalla (1)','frente alzada','manija 1','Parante Alzada']},
   {label:'Puerta heladera inferior',pieces:['Pta Heladera Inf']},
   {label:'Techo y base alzada',pieces:['techo alzada','base alzada']},
   {label:'Piso',pieces:['piso']},
@@ -32,7 +32,10 @@ export function correctPocketStack(pieces){
   const move=(p,x,y,z)=>{p.packed.x+=x;p.packed.y+=y;p.packed.z+=z;for(const side of ['min','max']){p.box[side].x+=x;p.box[side].y+=y;p.box[side].z+=z}};
   const above=(p,top)=>move(p,0,top+.02-p.box.min.y,0);
   const supportTop=Math.max(...pocketSequence[10].pieces.filter(n=>n.startsWith('Cuerpo')).map(n=>find(n).box.max.y));
-  above(find('manija 2 (1)'),supportTop);
+  const lowerHandle=find('manija 2 (1)'),upperHandle=find('manija 2');
+  const supportBottom=Math.min(...pocketSequence[10].pieces.filter(n=>n.startsWith('Cuerpo')).map(n=>find(n).box.min.y));
+  move(lowerHandle,0,supportBottom-.02-lowerHandle.box.max.y,0);
+  above(upperHandle,supportTop);
   const rack=find('Cuerpo126'),door=find('Pta Heladera Sup');
   move(door,(rack.box.min.x+rack.box.max.x-door.box.min.x-door.box.max.x)/2,0,(rack.box.min.z+rack.box.max.z-door.box.min.z-door.box.max.z)/2);
   above(door,rack.box.max.y);
