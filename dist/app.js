@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { OBJLoader } from './vendor/OBJLoader.js';
 import { packing } from './packing.js?v=20261030-8';
-import { pocketSequence, assignPocketSequence } from './pocket-sequence.js?v=20261030-9';
+import { pocketSequence, assignPocketSequence } from './pocket-sequence.js?v=20261030-10';
 
 const canvas=document.querySelector('#viewer');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
@@ -45,6 +45,12 @@ new OBJLoader().load('./assets/cocina-integral-pocket-embalada.obj',raw=>{
   meshes.forEach((mesh,index)=>{mesh.geometry.computeBoundingBox();const box=mesh.geometry.boundingBox.clone(),center=box.getCenter(new THREE.Vector3());boxAll.expandByPoint(box.min);boxAll.expandByPoint(box.max);mesh.geometry.translate(-center.x,-center.y,-center.z);mesh.material=pocketMaterial(mesh.name||'');mesh.castShadow=true;mesh.receiveShadow=true;const holder=new THREE.Group();holder.name=mesh.name||`Pieza ${index+1}`;holder.userData.pieceName=holder.name;mesh.userData.pieceName=holder.name;holder.add(mesh);pocketPackedRoot.add(holder);temp.push({holder,name:holder.name,packed:center.clone(),world:center.clone(),box,index})});
   const center=boxAll.getCenter(new THREE.Vector3());
   assignPocketSequence(temp);
+  // This handle spans the two support stacks at the same X/Z in the OBJ.
+  // Place its underside above their highest face before centering the package.
+  const supportNames=pocketSequence[10].pieces.filter(name=>name.startsWith('Cuerpo'));
+  const supportTop=Math.max(...temp.filter(p=>supportNames.includes(p.name)).map(p=>p.box.max.y));
+  const upperHandle=temp.find(p=>p.name==='manija 2 (1)');
+  upperHandle.packed.y+=supportTop+.02-upperHandle.box.min.y;
   temp.forEach(p=>{p.packed.sub(center);p.holder.position.copy(p.packed);pocketPackedPieces.push(p)});
   pocketLayerCount=pocketSequence.length;pocketLayerNames=pocketSequence.map(step=>step.label);
   refreshStatus();configureProgress();applyState();
